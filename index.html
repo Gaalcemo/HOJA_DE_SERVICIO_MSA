@@ -385,16 +385,11 @@
     })
     .then(res => res.text())
     .then(resp => {
-     // <!--if (resp === "OK") {
-     //   alert("Datos enviados correctamente.");
-     //   form.reset();
-     //   toggleOpcionales();
-     //    location.reload();--> // recargar para reiniciar bloques
-          if (resp === "OK") {
-      form.reset();
-      toggleOpcionales();
-      mostrarModal(); // Mostrar ventana visual elegante
-      }
+     if (resp === "OK") {
+     alert("Datos enviados correctamente.");
+     form.reset();
+     toggleOpcionales();
+     location.reload();--> // recargar para reiniciar bloques
       } else {
         alert("Error en respuesta del servidor: " + resp);
       }
