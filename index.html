@@ -353,7 +353,7 @@
   document.getElementById("hojaServicioForm").addEventListener("submit", function(e) {
     e.preventDefault();
 
-    const bloques = document.querySelectorAll("#operariosContainer .detalle-operario, .bloque-operario");
+    const bloques = document.querySelectorAll("#operariosContainer .bloque-operario, #operariosContainer > .detalle-operario");
     let valido = true;
 
     bloques.forEach((bloque, i) => {
