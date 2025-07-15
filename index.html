@@ -208,151 +208,197 @@
 
     <button type="submit">Enviar</button>
   </form>
-
   <script>
-    let contadorOperarios = 1;
+  let contadorOperarios = 1;
+  const maxOperarios = 8;
 
-    function agregarOperario() {
-  const container = document.getElementById("operariosContainer");
-  const original = container.querySelector(".detalle-operario");
-  const clon = original.cloneNode(true);
-  contadorOperarios++;
+  function agregarOperario() {
+    const container = document.getElementById("operariosContainer");
+    const original = container.querySelector(".detalle-operario");
+    const clon = original.cloneNode(true);
 
-  // Limpiar y renombrar campos
-  clon.querySelectorAll("input, select").forEach(el => {
-    if (el.name) el.name += `_${contadorOperarios}`;
-    if (el.type !== "hidden") el.value = "";
-  });
+    // Limpiar campos
+    clon.querySelectorAll("input, select").forEach(el => {
+      if (el.type !== "hidden") el.value = "";
+    });
 
-  // Asignar por defecto el nombre del operario
-  const campoOperario = clon.querySelector('input[name^="operario"]');
-  if (campoOperario) {
-    campoOperario.value = `Operario ${contadorOperarios}`;
-  }
+    // Crear contenedor del nuevo bloque
+    const bloque = document.createElement("div");
+    bloque.classList.add("bloque-operario");
 
-  // Crear título "Operario N"
-  const titulo = document.createElement("h4");
-  titulo.textContent = `Operario ${contadorOperarios}`;
-  titulo.style.marginTop = "30px";
-  titulo.style.color = "#333";
+    const separador = document.createElement("hr");
+    separador.style.margin = "20px 0";
+    bloque.appendChild(separador);
 
-  // Crear separador visual
-  const separador = document.createElement("hr");
-  separador.style.margin = "15px 0";
+    // Cabecera
+    const cabecera = document.createElement("div");
+    cabecera.style.display = "flex";
+    cabecera.style.justifyContent = "space-between";
+    cabecera.style.alignItems = "center";
 
-  // Agrupar título, bloque y separador
-  const bloque = document.createElement("div");
-  bloque.appendChild(titulo);
-  bloque.appendChild(clon);
-  bloque.appendChild(separador);
+    const titulo = document.createElement("h4");
+    titulo.style.marginTop = "30px";
+    titulo.style.marginBottom = "10px";
+    titulo.style.color = "#1e7e34";
+    titulo.style.fontSize = "18px";
+    titulo.style.fontWeight = "bold";
+    titulo.style.borderBottom = "2px solid #1e7e34";
 
-  container.appendChild(bloque);
-}
-    function calcularHorasPorElemento(el) {
-      const contenedor = el.closest('.detalle-operario');
-      const entrada = contenedor.querySelector('input[name^="entrada"]');
-      const salida = contenedor.querySelector('input[name^="salida"]');
-      const horas = contenedor.querySelector('input[name^="horas"]');
+    const botonEliminar = document.createElement("button");
+    botonEliminar.textContent = "🗑️ Eliminar";
+    botonEliminar.type = "button";
+    botonEliminar.style.backgroundColor = "#dc3545";
+    botonEliminar.style.color = "#fff";
+    botonEliminar.style.border = "none";
+    botonEliminar.style.padding = "6px 12px";
+    botonEliminar.style.borderRadius = "4px";
+    botonEliminar.style.cursor = "pointer";
+    botonEliminar.style.fontSize = "14px";
 
-      if (entrada.value && salida.value) {
-        const [h1, m1] = entrada.value.split(':').map(Number);
-        const [h2, m2] = salida.value.split(':').map(Number);
-        let start = new Date(0, 0, 0, h1, m1);
-        let end = new Date(0, 0, 0, h2, m2);
-        if (end < start) end.setDate(end.getDate() + 1);
-        const diff = new Date(end - start);
-        const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
-        const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
-        horas.value = `${h}:${m}`;
-      }
-    }
-
-    function toggleOpcionales() {
-      const seccion = document.getElementById('opcionalContainer');
-      const mostrar = document.getElementById('mostrarOpcionales').value;
-      seccion.style.display = mostrar === 'si' ? 'block' : 'none';
-    }
-
-    function calcularImporte(element) {
-      const fila = element.closest('tr');
-      const cantidad = parseFloat(fila.querySelector('.cantidad').value) || 0;
-      const precio = parseFloat(fila.querySelector('.precioU').value) || 0;
-      fila.querySelector('.importeFila').value = (cantidad * precio).toFixed(2);
-
-      let subtotal = 0;
-      document.querySelectorAll('.importeFila').forEach(el => {
-        subtotal += parseFloat(el.value) || 0;
-      });
-      document.getElementById('subtotal').value = subtotal.toFixed(2);
-      document.getElementById('total').value = subtotal.toFixed(2);
-    }
-
-    function asignarDatosCliente() {
-      const select = document.getElementById('cliente');
-      const option = select.options[select.selectedIndex];
-      document.getElementById('expediente').value = option.dataset.expediente || '';
-      document.getElementById('poblacion').value = option.dataset.poblacion || '';
-      document.getElementById('direccion').value = option.dataset.direccion || '';
-    }
-
-    window.onload = () => {
-      fetch('https://script.google.com/macros/s/AKfycbwWw-uJPu95YyP7Q0hbVqzjFLxYZj26T4c5THaFU0Je1Ag0nINIVCAQqGSGDnTPGbpJ/exec')
-        .then(res => res.text())
-        .then(num => {
-          document.getElementById('num_formulario').value = num;
-        })
-        .catch(() => {
-          document.getElementById('num_formulario').value = 'ERROR';
-        });
+    botonEliminar.onclick = () => {
+      bloque.remove();
+      renumerarOperarios();
+      mostrarBotonAgregar();
     };
 
-    document.getElementById("hojaServicioForm").addEventListener("submit", function(e) {
-      e.preventDefault();
+    cabecera.appendChild(titulo);
+    cabecera.appendChild(botonEliminar);
+    bloque.appendChild(cabecera);
+    bloque.appendChild(clon);
+    container.appendChild(bloque);
 
-      const bloques = document.querySelectorAll(".detalle-operario");
-      let valido = true;
+    contadorOperarios++;
+    renumerarOperarios();
+    mostrarBotonAgregar();
+  }
 
-      bloques.forEach((bloque, i) => {
-        const operario = bloque.querySelector('input[name^="operario"]');
-        const entrada = bloque.querySelector('input[name^="entrada"]');
-        const salida = bloque.querySelector('input[name^="salida"]');
-
-        if (!operario.value.trim()) {
-          alert(`Falta el nombre del operario en el bloque ${i + 1}`);
-          valido = false;
-          return;
-        }
-
-        if (!entrada.value || !salida.value) {
-          alert(`Falta hora de entrada o salida en el bloque ${i + 1}`);
-          valido = false;
-          return;
-        }
-      });
-
-      if (!valido) return;
-
-      const form = e.target;
-      const data = new FormData(form);
-
-      fetch("https://script.google.com/macros/s/AKfycbwWw-uJPu95YyP7Q0hbVqzjFLxYZj26T4c5THaFU0Je1Ag0nINIVCAQqGSGDnTPGbpJ/exec", {
-        method: "POST",
-        body: data
-      })
-      .then(res => res.text())
-      .then(resp => {
-        if (resp === "OK") {
-          alert("Datos enviados correctamente.");
-          form.reset();
-          toggleOpcionales();
-        } else {
-          alert("Error en respuesta del servidor: " + resp);
-        }
-      })
-      .catch(err => {
-        alert("Error al enviar datos: " + err.message);
-      });
+  function renumerarOperarios() {
+    const bloques = document.querySelectorAll("#operariosContainer .bloque-operario, .detalle-operario");
+    bloques.forEach((bloque, index) => {
+      const numero = index + 1;
+      const titulo = bloque.querySelector("h4");
+      if (titulo) titulo.textContent = `Operario ${numero}`;
+      const campoOperario = bloque.querySelector('input[name^="operario"]');
+      if (campoOperario && campoOperario.value.startsWith("Operario ")) {
+        campoOperario.value = `Operario ${numero}`;
+      }
     });
-  </script>
+    contadorOperarios = bloques.length;
+  }
+
+  function mostrarBotonAgregar() {
+    const total = document.querySelectorAll("#operariosContainer .bloque-operario, .detalle-operario").length;
+    const btn = document.getElementById("btnAgregarOperario");
+    btn.style.display = total < maxOperarios ? "inline-block" : "none";
+  }
+
+  function calcularHorasPorElemento(el) {
+    const contenedor = el.closest('.detalle-operario, .bloque-operario');
+    const entrada = contenedor.querySelector('input[name^="entrada"]');
+    const salida = contenedor.querySelector('input[name^="salida"]');
+    const horas = contenedor.querySelector('input[name^="horas"]');
+
+    if (entrada.value && salida.value) {
+      const [h1, m1] = entrada.value.split(':').map(Number);
+      const [h2, m2] = salida.value.split(':').map(Number);
+      let start = new Date(0, 0, 0, h1, m1);
+      let end = new Date(0, 0, 0, h2, m2);
+      if (end < start) end.setDate(end.getDate() + 1);
+      const diff = new Date(end - start);
+      const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
+      const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+      horas.value = `${h}:${m}`;
+    }
+  }
+
+  function toggleOpcionales() {
+    const seccion = document.getElementById('opcionalContainer');
+    const mostrar = document.getElementById('mostrarOpcionales').value;
+    seccion.style.display = mostrar === 'si' ? 'block' : 'none';
+  }
+
+  function calcularImporte(element) {
+    const fila = element.closest('tr');
+    const cantidad = parseFloat(fila.querySelector('.cantidad').value) || 0;
+    const precio = parseFloat(fila.querySelector('.precioU').value) || 0;
+    fila.querySelector('.importeFila').value = (cantidad * precio).toFixed(2);
+
+    let subtotal = 0;
+    document.querySelectorAll('.importeFila').forEach(el => {
+      subtotal += parseFloat(el.value) || 0;
+    });
+    document.getElementById('subtotal').value = subtotal.toFixed(2);
+    document.getElementById('total').value = subtotal.toFixed(2);
+  }
+
+  function asignarDatosCliente() {
+    const select = document.getElementById('cliente');
+    const option = select.options[select.selectedIndex];
+    document.getElementById('expediente').value = option.dataset.expediente || '';
+    document.getElementById('poblacion').value = option.dataset.poblacion || '';
+    document.getElementById('direccion').value = option.dataset.direccion || '';
+  }
+
+  window.onload = () => {
+    fetch('https://script.google.com/macros/s/AKfycbwWw-uJPu95YyP7Q0hbVqzjFLxYZj26T4c5THaFU0Je1Ag0nINIVCAQqGSGDnTPGbpJ/exec')
+      .then(res => res.text())
+      .then(num => {
+        document.getElementById('num_formulario').value = num;
+      })
+      .catch(() => {
+        document.getElementById('num_formulario').value = 'ERROR';
+      });
+    mostrarBotonAgregar();
+  };
+
+  document.getElementById("hojaServicioForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const bloques = document.querySelectorAll("#operariosContainer .detalle-operario, .bloque-operario");
+    let valido = true;
+
+    bloques.forEach((bloque, i) => {
+      const operario = bloque.querySelector('input[name^="operario"]');
+      const entrada = bloque.querySelector('input[name^="entrada"]');
+      const salida = bloque.querySelector('input[name^="salida"]');
+
+      if (!operario.value.trim()) {
+        alert(`Falta el nombre del operario en el bloque ${i + 1}`);
+        valido = false;
+        return;
+      }
+
+      if (!entrada.value || !salida.value) {
+        alert(`Falta hora de entrada o salida en el bloque ${i + 1}`);
+        valido = false;
+        return;
+      }
+    });
+
+    if (!valido) return;
+
+    const form = e.target;
+    const data = new FormData(form);
+
+    fetch("https://script.google.com/macros/s/AKfycbwWw-uJPu95YyP7Q0hbVqzjFLxYZj26T4c5THaFU0Je1Ag0nINIVCAQqGSGDnTPGbpJ/exec", {
+      method: "POST",
+      body: data
+    })
+    .then(res => res.text())
+    .then(resp => {
+      if (resp === "OK") {
+        alert("Datos enviados correctamente.");
+        form.reset();
+        toggleOpcionales();
+        location.reload(); // recargar para reiniciar bloques
+      } else {
+        alert("Error en respuesta del servidor: " + resp);
+      }
+    })
+    .catch(err => {
+      alert("Error al enviar datos: " + err.message);
+    });
+  });
+</script>
 </body>
 </html>
