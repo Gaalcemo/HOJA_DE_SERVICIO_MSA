@@ -377,6 +377,9 @@
     if (!valido) return;
 
     const form = e.target;
+    const botonEnviar = form.querySelector('button[type="submit"]');
+    botonEnviar.disabled = true;
+    botonEnviar.textContent = "Enviando...";
     const data = new FormData(form);
 
     fetch("https://script.google.com/macros/s/AKfycbyPW1KXMPYsqjlwt8Fuvwgmtsz6KD2fLYal7PhoxLVwghEiEyV5bpkZjCUmUPVlZ6ln/exec", {
