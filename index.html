@@ -209,67 +209,85 @@
     <button type="submit">Enviar</button>
   </form>
   <script>
-  let contadorOperarios = 1;
-  const maxOperarios = 8;
+  <script>
+    let maxOperarios = 8;
 
-  function agregarOperario() {
-    const container = document.getElementById("operariosContainer");
-    const original = container.querySelector(".detalle-operario");
-    const clon = original.cloneNode(true);
+    function agregarOperario() {
+      const container = document.getElementById("operariosContainer");
+      const original = container.querySelector(".detalle-operario");
+      const clon = original.cloneNode(true);
 
-    // Limpiar campos
-    clon.querySelectorAll("input, select").forEach(el => {
-      if (el.type !== "hidden") el.value = "";
-    });
+      clon.querySelectorAll("input, select").forEach(el => {
+        if (el.type !== "hidden") el.value = "";
+      });
 
-    // Crear contenedor del nuevo bloque
-    const bloque = document.createElement("div");
-    bloque.classList.add("bloque-operario");
+      const bloque = document.createElement("div");
+      bloque.classList.add("bloque-operario");
 
-    const separador = document.createElement("hr");
-    separador.style.margin = "20px 0";
-    bloque.appendChild(separador);
+      const separador = document.createElement("hr");
+      separador.style.margin = "20px 0";
+      bloque.appendChild(separador);
 
-    // Cabecera
-    const cabecera = document.createElement("div");
-    cabecera.style.display = "flex";
-    cabecera.style.justifyContent = "space-between";
-    cabecera.style.alignItems = "center";
+      const cabecera = document.createElement("div");
+      cabecera.style.display = "flex";
+      cabecera.style.justifyContent = "space-between";
+      cabecera.style.alignItems = "center";
 
-    const titulo = document.createElement("h4");
-    titulo.style.marginTop = "30px";
-    titulo.style.marginBottom = "10px";
-    titulo.style.color = "#1e7e34";
-    titulo.style.fontSize = "18px";
-    titulo.style.fontWeight = "bold";
-    titulo.style.borderBottom = "2px solid #1e7e34";
+      const titulo = document.createElement("h4");
+      titulo.style.marginTop = "30px";
+      titulo.style.marginBottom = "10px";
+      titulo.style.color = "#1e7e34";
+      titulo.style.fontSize = "18px";
+      titulo.style.fontWeight = "bold";
+      titulo.style.borderBottom = "2px solid #1e7e34";
 
-    const botonEliminar = document.createElement("button");
-    botonEliminar.textContent = "🗑️ Eliminar";
-    botonEliminar.type = "button";
-    botonEliminar.style.backgroundColor = "#dc3545";
-    botonEliminar.style.color = "#fff";
-    botonEliminar.style.border = "none";
-    botonEliminar.style.padding = "6px 12px";
-    botonEliminar.style.borderRadius = "4px";
-    botonEliminar.style.cursor = "pointer";
-    botonEliminar.style.fontSize = "14px";
+      const botonEliminar = document.createElement("button");
+      botonEliminar.textContent = "🗑️ Eliminar";
+      botonEliminar.type = "button";
+      botonEliminar.style.backgroundColor = "#dc3545";
+      botonEliminar.style.color = "#fff";
+      botonEliminar.style.border = "none";
+      botonEliminar.style.padding = "6px 12px";
+      botonEliminar.style.borderRadius = "4px";
+      botonEliminar.style.cursor = "pointer";
+      botonEliminar.style.fontSize = "14px";
 
-    botonEliminar.onclick = () => {
-      bloque.remove();
+      botonEliminar.onclick = () => {
+        bloque.remove();
+        renumerarOperarios();
+        mostrarBotonAgregar();
+      };
+
+      cabecera.appendChild(titulo);
+      cabecera.appendChild(botonEliminar);
+      bloque.appendChild(cabecera);
+      bloque.appendChild(clon);
+      container.appendChild(bloque);
+
       renumerarOperarios();
       mostrarBotonAgregar();
-    };
+    }
 
-    cabecera.appendChild(titulo);
-    cabecera.appendChild(botonEliminar);
-    bloque.appendChild(cabecera);
-    bloque.appendChild(clon);
-    container.appendChild(bloque);
+    function renumerarOperarios() {
+      const bloques = document.querySelectorAll("#operariosContainer > .detalle-operario, #operariosContainer > .bloque-operario");
+      bloques.forEach((bloque, index) => {
+        const numero = index + 1;
+        const titulo = bloque.querySelector("h4");
+        if (titulo) titulo.textContent = `Operario ${numero}`;
+        const campoOperario = bloque.querySelector('input[name^="operario"]');
+        if (campoOperario && campoOperario.value.startsWith("Operario ")) {
+          campoOperario.value = `Operario ${numero}`;
+        }
+      });
+    }
 
-    renumerarOperarios();
-    mostrarBotonAgregar();
-  }
+    function mostrarBotonAgregar() {
+      const total = document.querySelectorAll("#operariosContainer > .detalle-operario, #operariosContainer > .bloque-operario").length;
+      const btn = document.getElementById("btnAgregarOperario");
+      if (btn) {
+        btn.style.display = total < maxOperarios ? "inline-block" : "none";
+      }
+    }
 
   function renumerarOperarios() {
     const bloques = document.querySelectorAll("#operariosContainer .bloque-operario, .detalle-operario");
