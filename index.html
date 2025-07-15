@@ -242,6 +242,15 @@
     <button type="submit">Enviar</button>
   </form>
   <script>
+
+    function mostrarModal() {
+  document.getElementById("modalConfirmacion").style.display = "flex";
+}
+
+function cerrarModal() {
+  document.getElementById("modalConfirmacion").style.display = "none";
+}
+
   let contadorOperarios = 1;
   const maxOperarios = 8;
 
@@ -418,11 +427,16 @@
     })
     .then(res => res.text())
     .then(resp => {
-      if (resp === "OK") {
-        alert("Datos enviados correctamente.");
-        form.reset();
-        toggleOpcionales();
-        location.reload(); // recargar para reiniciar bloques
+     // <!--if (resp === "OK") {
+     //   alert("Datos enviados correctamente.");
+     //   form.reset();
+     //   toggleOpcionales();
+     //    location.reload();--> // recargar para reiniciar bloques
+          if (resp === "OK") {
+      form.reset();
+      toggleOpcionales();
+      mostrarModal(); // Mostrar ventana visual elegante
+      }
       } else {
         alert("Error en respuesta del servidor: " + resp);
       }
