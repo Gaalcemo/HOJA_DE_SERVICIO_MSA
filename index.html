@@ -218,9 +218,13 @@
     const clon = original.cloneNode(true);
 
     // Limpiar campos
-    clon.querySelectorAll("input, select").forEach(el => {
-      if (el.type !== "hidden") el.value = "";
-    });
+          clon.querySelectorAll("input, select, textarea").forEach(el => {
+          const name = el.getAttribute("name");
+          if (name) {
+          const nuevoName = name + "_" + (contadorOperarios + 1); // Ej: operario_2
+          el.setAttribute("name", nuevoName);
+          }
+        });
 
     // Crear contenedor del nuevo bloque
     const bloque = document.createElement("div");
@@ -282,7 +286,7 @@
           campoOperario.value = `Operario ${numero}`;
       }
     });
-    contadorOperarios = bloques.length;
+    contadorOperarios = document.querySelectorAll("#operariosContainer .detalle-operario, .bloque-operario").length;
   }
 
   function mostrarBotonAgregar() {
