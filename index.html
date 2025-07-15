@@ -162,38 +162,44 @@
       <textarea id="descripcion" name="descripcion" rows="6" class="full"></textarea>
     </div>
 
-    <div class="form-section">
-      <h3>Detalle por día</h3>
-      <label for="fecha_dia">Fecha dia Trabajado:</label>
-      <input type="date" id="fecha_dia" name="fecha_dia" class="short" />
+    <!-- Nuevo contenedor de operarios -->
+  <div class="form-section">
+    <h3>Detalle por día</h3>
+    <div id="operariosContainer">
+      <div class="detalle-operario">
+        <label>Fecha día trabajado:</label>
+        <input type="date" name="fecha_dia" class="short" />
 
-      <label for="operario">Operario:</label>
-      <input type="text" id="operario" name="operario" class="medium" />
+        <label>Operario:</label>
+        <input type="text" name="operario" class="medium" />
 
-      <label for="entrada">Hora Entrada:</label>
-      <input type="time" id="entrada" name="entrada" class="time" onchange="calcularHoras()" />
+        <label>Hora Entrada:</label>
+        <input type="time" name="entrada" class="time" onchange="calcularHorasPorElemento(this)" />
 
-      <label for="salida">Hora Salida:</label>
-      <input type="time" id="salida" name="salida" class="time" onchange="calcularHoras()" />
+        <label>Hora Salida:</label>
+        <input type="time" name="salida" class="time" onchange="calcularHorasPorElemento(this)" />
 
-      <label for="horas">Nº Horas:</label>
-      <input type="text" id="horas" name="horas" readonly class="hours" />
+        <label>Nº Horas:</label>
+        <input type="text" name="horas" readonly class="hours" />
 
-      <label for="tipo_hora">Tipo de hora:</label>
-      <select id="tipo_hora" name="tipo_hora" required class="medium">
-        <option value="" disabled selected>Seleccionar tipo</option>
-        <option value="NORMAL">NORMAL</option>
-        <option value="NOCTURNA">NOCTURNA</option>
-        <option value="FESTIVA">FESTIVA</option>
-        <option value="EXTRA">EXTRA</option>
-      </select>
+        <label>Tipo de hora:</label>
+        <select name="tipo_hora" required class="medium">
+          <option value="" disabled selected>Seleccionar tipo</option>
+          <option value="NORMAL">NORMAL</option>
+          <option value="NOCTURNA">NOCTURNA</option>
+          <option value="FESTIVA">FESTIVA</option>
+          <option value="EXTRA">EXTRA</option>
+        </select>
 
-      <label for="precio">Precio unitario:</label>
-      <input type="number" id="precio" name="precio" step="0.01" class="short" />
+        <label>Precio unitario:</label>
+        <input type="number" name="precio" step="0.01" class="short" />
 
-      <label for="importe">Importe:</label>
-      <input type="number" id="importe" name="importe" step="0.01" class="short" />
+        <label>Importe:</label>
+        <input type="number" name="importe" step="0.01" class="short" />
+      </div>
     </div>
+    <button type="button" onclick="agregarOperario()">+ Añadir registro</button>
+  </div>
      <!-- SOLO MUESTRA LA SECCIÓN DE MATERIALES Y DIETAS -->
 
 <div class="form-section">
