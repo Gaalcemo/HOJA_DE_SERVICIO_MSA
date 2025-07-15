@@ -5,6 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hoja de Servicio</title>
   <style>
+
+<div id="modalConfirmacion" style="
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  justify-content: center;
+  align-items: center;
+">
+  <div style="
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(0,0,0,0.3);
+  ">
+    <h3 style="color: #28a745;">✅ Datos enviados</h3>
+    <p>Tu hoja de servicio ha sido registrada exitosamente.</p>
+    <button onclick="cerrarModal()" style="
+      margin-top: 15px;
+      background: #28a745;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    ">Aceptar</button>
+  </div>
+</div>
+
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
@@ -385,11 +418,11 @@
     })
     .then(res => res.text())
     .then(resp => {
-     if (resp === "OK") {
-     alert("Datos enviados correctamente.");
-     form.reset();
-     toggleOpcionales();
-     location.reload();--> // recargar para reiniciar bloques
+      if (resp === "OK") {
+        alert("Datos enviados correctamente.");
+        form.reset();
+        toggleOpcionales();
+        location.reload(); // recargar para reiniciar bloques
       } else {
         alert("Error en respuesta del servidor: " + resp);
       }
