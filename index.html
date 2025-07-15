@@ -130,7 +130,6 @@
       <textarea id="descripcion" name="descripcion" rows="6" class="full"></textarea>
     </div>
 
-    <!-- Contenedor de múltiples registros -->
     <div class="form-section">
       <h3>Detalle por día</h3>
       <div id="operariosContainer">
@@ -169,7 +168,6 @@
       <button type="button" onclick="agregarOperario()">+ Añadir registro</button>
     </div>
 
-    <!-- Materiales, Dietas, KM -->
     <div class="form-section">
       <label for="mostrarOpcionales">¿Vas a Diligenciar Materiales, Dietas, KM?</label>
       <select id="mostrarOpcionales" onchange="toggleOpcionales()" class="short">
@@ -288,6 +286,30 @@
 
     document.getElementById("hojaServicioForm").addEventListener("submit", function(e) {
       e.preventDefault();
+
+      const bloques = document.querySelectorAll(".detalle-operario");
+      let valido = true;
+
+      bloques.forEach((bloque, i) => {
+        const operario = bloque.querySelector('input[name^="operario"]');
+        const entrada = bloque.querySelector('input[name^="entrada"]');
+        const salida = bloque.querySelector('input[name^="salida"]');
+
+        if (!operario.value.trim()) {
+          alert(`Falta el nombre del operario en el bloque ${i + 1}`);
+          valido = false;
+          return;
+        }
+
+        if (!entrada.value || !salida.value) {
+          alert(`Falta hora de entrada o salida en el bloque ${i + 1}`);
+          valido = false;
+          return;
+        }
+      });
+
+      if (!valido) return;
+
       const form = e.target;
       const data = new FormData(form);
 
