@@ -343,7 +343,7 @@
   }
 
   window.onload = () => {
-    fetch('https://script.google.com/macros/s/AKfycbzAeETMTUsiENTaDdq1KrWD4nBu0iI9_htUaLuwY0SVUWvcoKeFHhLqIH-AEQKe3uTp/exec')
+    fetch('https://script.google.com/macros/s/AKfycbxCRbkMyzRs-JcX-SY05y2qxh9y0eWzNGNoeGtwb0oLW3xMU6QsPuVpowdGydYPMGrm/exec')
       .then(res => res.text())
       .then(num => {
         document.getElementById('num_formulario').value = num;
@@ -386,7 +386,7 @@
     botonEnviar.textContent = "Enviando...";
     const data = new FormData(form);
 
-    fetch("https://script.google.com/macros/s/AKfycbzAeETMTUsiENTaDdq1KrWD4nBu0iI9_htUaLuwY0SVUWvcoKeFHhLqIH-AEQKe3uTp/exec", {
+    fetch("https://script.google.com/macros/s/AKfycbxCRbkMyzRs-JcX-SY05y2qxh9y0eWzNGNoeGtwb0oLW3xMU6QsPuVpowdGydYPMGrm/exec", {
       method: "POST",
       body: data
     })
