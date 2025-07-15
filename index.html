@@ -272,14 +272,14 @@
   }
 
   function renumerarOperarios() {
-    const bloques = document.querySelectorAll("#operariosContainer .bloque-operario, .detalle-operario");
-    bloques.forEach((bloque, index) => {
-      const numero = index + 1;
-      const titulo = bloque.querySelector("h4");
-      if (titulo) titulo.textContent = `Operario ${numero}`;
-      const campoOperario = bloque.querySelector('input[name^="operario"]');
-      if (campoOperario && campoOperario.value.startsWith("Operario ")) {
-        campoOperario.value = `Operario ${numero}`;
+      const bloques = document.querySelectorAll("#operariosContainer > .bloque-operario, #operariosContainer > .detalle-operario");
+      bloques.forEach((bloque, index) => {
+        const numero = index + 1;
+        const titulo = bloque.querySelector("h4");
+        if (titulo) titulo.textContent = `Operario ${numero}`;
+        const campoOperario = bloque.querySelector('input[name^="operario"]');
+        if (campoOperario && campoOperario.value.startsWith("Operario ")) {
+          campoOperario.value = `Operario ${numero}`;
       }
     });
     contadorOperarios = bloques.length;
