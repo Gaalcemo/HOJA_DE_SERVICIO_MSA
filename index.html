@@ -213,19 +213,41 @@
     let contadorOperarios = 1;
 
     function agregarOperario() {
-      const container = document.getElementById("operariosContainer");
-      const original = container.querySelector(".detalle-operario");
-      const clon = original.cloneNode(true);
-      contadorOperarios++;
+  const container = document.getElementById("operariosContainer");
+  const original = container.querySelector(".detalle-operario");
+  const clon = original.cloneNode(true);
+  contadorOperarios++;
 
-      clon.querySelectorAll("input, select").forEach(el => {
-        el.value = "";
-        if (el.name) el.name += `_${contadorOperarios}`;
-      });
+  // Limpiar y renombrar campos
+  clon.querySelectorAll("input, select").forEach(el => {
+    if (el.name) el.name += `_${contadorOperarios}`;
+    if (el.type !== "hidden") el.value = "";
+  });
 
-      container.appendChild(clon);
-    }
+  // Asignar por defecto el nombre del operario
+  const campoOperario = clon.querySelector('input[name^="operario"]');
+  if (campoOperario) {
+    campoOperario.value = `Operario ${contadorOperarios}`;
+  }
 
+  // Crear título "Operario N"
+  const titulo = document.createElement("h4");
+  titulo.textContent = `Operario ${contadorOperarios}`;
+  titulo.style.marginTop = "30px";
+  titulo.style.color = "#333";
+
+  // Crear separador visual
+  const separador = document.createElement("hr");
+  separador.style.margin = "15px 0";
+
+  // Agrupar título, bloque y separador
+  const bloque = document.createElement("div");
+  bloque.appendChild(titulo);
+  bloque.appendChild(clon);
+  bloque.appendChild(separador);
+
+  container.appendChild(bloque);
+}
     function calcularHorasPorElemento(el) {
       const contenedor = el.closest('.detalle-operario');
       const entrada = contenedor.querySelector('input[name^="entrada"]');
