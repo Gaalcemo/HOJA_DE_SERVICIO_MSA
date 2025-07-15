@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hoja de Servicio</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f9f9f9;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 800px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .form-section {
+      margin-bottom: 20px;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 10px;
+    }
+    input, select, textarea {
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    input.full, select.full, textarea.full {
+      width: 100%;
+    }
+    input.short, select.short {
+      width: 200px;
+    }
+    input.time {
+      width: 120px;
+    }
+    input.hours {
+      width: 100px;
+    }
+    select.medium {
+      width: 160px;
+    }
+    select.client {
+      width: 300px;
+    }
+    button {
+      background: #28a745;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #218838;
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .logo img {
+      max-width: 300px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    table th, table td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+    .totals {
+      text-align: right;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="logo">
+    <img src="https://dochub.com/gabriel-alexander-celis-morales/YpDBonNVr34EdJDwMX93r7/logo-mansera-cropped-logoo-2048x659-png" alt="Logo Mansera" />
+  </div>
+
+  <h2>Hoja de Servicio</h2>
+  <form id="hojaServicioForm">
+    <div class="form-section" style="display: none;">
+      <label for="num_formulario">Nº de Formulario:</label>
+      <input type="text" id="num_formulario" name="num_formulario" readonly class="short" />
+    </div>
+
+    <div class="form-section">
+      <label for="cliente">Cliente:</label>
+      <select id="cliente" name="cliente" required onchange="asignarDatosCliente()" class="client">
+        <option value="" disabled selected>Selecciona al Cliente</option>
+        <option value="REFRESCO IBERIA (Pepsi)|112.1|Sevilla|C. Finca los Espartales, 12, 41309 La Rinconada">REFRESCO IBERIA (Pepsi)</option>
+        <option value="COCA-COLA|116.1|Sevilla|Polígono Industrial los Espartales, S/N, C. Finca los Espartales, 41309">COCA-COLA</option>
+        <option value="PERSAN|140.1|Sevilla|C. Pino Estrobo, 5, 41016">PERSAN</option>
+        <option value="ANGEL CAMACHO|262.1">ANGEL CAMACHO</option>
+        <option value="IEST (Informatica del Este)|276.1">IEST (Informatica del Este)</option>
+      </select>
+
+      <label for="expediente">Expediente:</label>
+      <input type="text" id="expediente" name="expediente" readonly class="short" />
+
+      <label for="poblacion">Población:</label>
+      <input type="text" id="poblacion" name="poblacion" class="medium" />
+
+      <label for="direccion">Dirección:</label>
+      <input type="text" id="direccion" name="direccion" class="full" />
+
+      <label for="fecha">Fecha de realización:</label>
+      <input type="date" id="fecha" name="fecha" class="short" />
+
+      <label for="instalacion">Instalación:</label>
+      <input type="text" id="instalacion" name="instalacion" class="full" />
+
+      <label for="descripcion">Descripción del trabajo:</label>
+      <textarea id="descripcion" name="descripcion" rows="6" class="full"></textarea>
+    </div>
+
+    <div class="form-section">
+      <h3>Detalle por día</h3>
+      <label for="fecha_dia">Fecha:</label>
+      <input type="date" id="fecha_dia" name="fecha_dia" class="short" />
+
+      <label for="operario">Operario:</label>
+      <input type="text" id="operario" name="operario" class="medium" />
+
+      <label for="entrada">Hora Entrada:</label>
+      <input type="time" id="entrada" name="entrada" class="time" onchange="calcularHoras()" />
+
+      <label for="salida">Hora Salida:</label>
+      <input type="time" id="salida" name="salida" class="time" onchange="calcularHoras()" />
+
+      <label for="horas">Nº Horas:</label>
+      <input type="text" id="horas" name="horas" readonly class="hours" />
+
+      <label for="tipo_hora">Tipo de hora:</label>
+      <select id="tipo_hora" name="tipo_hora" required class="medium">
+        <option value="" disabled selected>Seleccionar tipo</option>
+        <option value="NORMAL">NORMAL</option>
+        <option value="NOCTURNA">NOCTURNA</option>
+        <option value="FESTIVA">FESTIVA</option>
+        <option value="EXTRA">EXTRA</option>
+      </select>
+
+      <label for="precio">Precio unitario:</label>
+      <input type="number" id="precio" name="precio" step="0.01" class="short" />
+
+      <label for="importe">Importe:</label>
+      <input type="number" id="importe" name="importe" step="0.01" class="short" />
+    </div>
+     <!-- SOLO MUESTRA LA SECCIÓN DE MATERIALES Y DIETAS -->
+
+<div class="form-section">
+  <label for="mostrarOpcionales">¿Vas a Diligenciar Materiales, Dietas, KM?</label>
+  <select id="mostrarOpcionales" onchange="toggleOpcionales()" class="short">
+    <option value="no" selected>NO</option>
+    <option value="si">SÍ</option>
+  </select>
+
+  <div id="opcionalContainer" style="display: none;">
+    <h3>Materiales, Dietas y KM</h3>
+    <table id="tablaOpcionales">
+      <thead>
+        <tr>
+          <th>CANTIDAD</th>
+          <th>CONCEPTO</th>
+          <th>PRECIO UNITARIO</th>
+          <th>IMPORTE</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- 6 filas con nombres únicos -->
+        <tr>
+          <td><input type="number" name="cantidad_1" class="cantidad" oninput="calcularImporte(this)" /></td>
+          <td><input type="text" name="concepto_1" /></td>
+          <td><input type="number" name="precioU_1" class="precioU" step="0.01" oninput="calcularImporte(this)" /></td>
+          <td><input type="number" name="importeFila_1" class="importeFila" readonly /></td>
+        </tr>
+        <tr>
+          <td><input type="number" name="cantidad_2" class="cantidad" oninput="calcularImporte(this)" /></td>
+          <td><input type="text" name="concepto_2" /></td>
+          <td><input type="number" name="precioU_2" class="precioU" step="0.01" oninput="calcularImporte(this)" /></td>
+          <td><input type="number" name="importeFila_2" class="importeFila" readonly /></td>
+        </tr>
+        <tr>
+          <td><input type="number" name="cantidad_3" class="cantidad" oninput="calcularImporte(this)" /></td>
+          <td><input type="text" name="concepto_3" /></td>
+          <td><input type="number" name="precioU_3" class="precioU" step="0.01" oninput="calcularImporte(this)" /></td>
+          <td><input type="number" name="importeFila_3" class="importeFila" readonly /></td>
+        </tr>
+        <tr>
+          <td><input type="number" name="cantidad_4" class="cantidad" oninput="calcularImporte(this)" /></td>
+          <td><input type="text" name="concepto_4" /></td>
+          <td><input type="number" name="precioU_4" class="precioU" step="0.01" oninput="calcularImporte(this)" /></td>
+          <td><input type="number" name="importeFila_4" class="importeFila" readonly /></td>
+        </tr>
+        <tr>
+          <td><input type="number" name="cantidad_5" class="cantidad" oninput="calcularImporte(this)" /></td>
+          <td><input type="text" name="concepto_5" /></td>
+          <td><input type="number" name="precioU_5" class="precioU" step="0.01" oninput="calcularImporte(this)" /></td>
+          <td><input type="number" name="importeFila_5" class="importeFila" readonly /></td>
+        </tr>
+        <tr>
+          <td><input type="number" name="cantidad_6" class="cantidad" oninput="calcularImporte(this)" /></td>
+          <td><input type="text" name="concepto_6" /></td>
+          <td><input type="number" name="precioU_6" class="precioU" step="0.01" oninput="calcularImporte(this)" /></td>
+          <td><input type="number" name="importeFila_6" class="importeFila" readonly /></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <label for="subtotal">SUBTOTAL: </label>
+      <input type="number" id="subtotal" name="subtotal" readonly />
+      <br />
+      <label for="total">TOTAL: </label>
+      <input type="number" id="total" name="total" readonly />
+    </div>
+  </div>
+</div>
+
+    <button type="submit">Enviar</button>
+  </form>
+
+  <script>
+    function calcularImporte(element) {
+  const fila = element.closest('tr');
+  const cantidad = parseFloat(fila.querySelector('.cantidad').value) || 0;
+  const precio = parseFloat(fila.querySelector('.precioU').value) || 0;
+  const importe = cantidad * precio;
+  const inputImporte = fila.querySelector('.importeFila');
+  inputImporte.value = importe.toFixed(2);
+
+  // Recalcular subtotales y total
+  let subtotal = 0;
+  document.querySelectorAll('.importeFila').forEach(el => {
+    subtotal += parseFloat(el.value) || 0;
+  });
+  document.getElementById('subtotal').value = subtotal.toFixed(2);
+  document.getElementById('total').value = subtotal.toFixed(2);
+    }
+    function asignarDatosCliente() {
+      const clienteSelect = document.getElementById('cliente').value.split('|');
+      document.getElementById('expediente').value = clienteSelect[1] || '';
+      document.getElementById('poblacion').value = clienteSelect[2] || '';
+      document.getElementById('direccion').value = clienteSelect[3] || '';
+    }
+
+    window.onload = () => {
+      fetch('https://script.google.com/macros/s/AKfycbwWw-uJPu95YyP7Q0hbVqzjFLxYZj26T4c5THaFU0Je1Ag0nINIVCAQqGSGDnTPGbpJ/exec')
+        .then(res => res.text())
+        .then(numero => {
+          document.getElementById('num_formulario').value = numero;
+        })
+        .catch(() => {
+          document.getElementById('num_formulario').value = 'ERROR';
+        });
+    };
+
+    function calcularHoras() {
+      const entrada = document.getElementById('entrada').value;
+      const salida = document.getElementById('salida').value;
+      if (entrada && salida) {
+        const [h1, m1] = entrada.split(':').map(Number);
+        const [h2, m2] = salida.split(':').map(Number);
+        let start = new Date(0, 0, 0, h1, m1, 0);
+        let end = new Date(0, 0, 0, h2, m2, 0);
+        if (end < start) end.setDate(end.getDate() + 1);
+        let diff = new Date(end - start);
+        const horas = Math.floor(diff / (1000 * 60 * 60));
+        const minutos = Math.floor((diff / (1000 * 60)) % 60);
+        document.getElementById('horas').value = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
+      }
+    }
+
+    // Mostrar/ocultar sección de Materiales/Dietas/KM
+    function toggleOpcionales() {
+      const seccion = document.getElementById('opcionalContainer');
+      const mostrar = document.getElementById('mostrarOpcionales').value;
+      seccion.style.display = mostrar === 'si' ? 'block' : 'none';
+    }
+
+    // Calcular importes por fila y totales
+    function calcularImporte(element) {
+      const fila = element.closest('tr');
+      const cantidad = parseFloat(fila.querySelector('.cantidad').value) || 0;
+      const precio = parseFloat(fila.querySelector('.precioU').value) || 0;
+      const importe = cantidad * precio;
+      fila.querySelector('.importeFila').value = importe.toFixed(2);
+
+      // Recalcular subtotal y total
+      let subtotal = 0;
+      document.querySelectorAll('.importeFila').forEach(el => {
+        subtotal += parseFloat(el.value) || 0;
+      });
+      document.getElementById('subtotal').value = subtotal.toFixed(2);
+      document.getElementById('total').value = subtotal.toFixed(2); // Aquí podrías sumar más cosas si lo deseas
+    }
+  </script>
+    <script>
+  document.getElementById("hojaServicioForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const form = e.target;
+    const data = new FormData(form);
+
+    fetch("https://script.google.com/macros/s/AKfycbwWw-uJPu95YyP7Q0hbVqzjFLxYZj26T4c5THaFU0Je1Ag0nINIVCAQqGSGDnTPGbpJ/exec", {
+      method: "POST",
+      body: data
+    })
+    .then(res => res.text())
+    .then(resp => {
+      if (resp === "OK") {
+        alert("Datos enviados correctamente.");
+        form.reset();
+        toggleOpcionales(); // Ocultar si estaba abierto
+      } else {
+        alert("Error en respuesta del servidor: " + resp);
+      }
+    })
+    .catch(err => {
+      alert("Error al enviar datos: " + err.message);
+    });
+  });
+  </script>
+</body>
+</html>
