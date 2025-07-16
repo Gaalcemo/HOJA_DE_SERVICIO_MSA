@@ -210,24 +210,32 @@
     <button type="submit">Enviar</button>
   </form>
   <script>
-  let contadorOperarios = 1;
+  let contadorOperarios = 0;
   const maxOperarios = 8;
 
   function agregarOperario() {
     const container = document.getElementById("operariosContainer");
-    const original = container.querySelector(".detalle-operario");
-    const clon = original.cloneNode(true);
+    const original  = container.querySelector(".detalle-operario");
+    const clon      = original.cloneNode(true);
 
-    // Limpiar campos
-          clon.querySelectorAll("input, select, textarea").forEach(el => {
-          const name = el.getAttribute("name");
-          if (name) {
-          const nuevoName = name + "_" + (contadorOperarios + 1); // Ej: operario_2
-          el.setAttribute("name", nuevoName);
-          }
-        });
+    // 1) Incrementamos el contador de operarios
+    contadorOperarios++;
 
-    // Crear contenedor del nuevo bloque
+    // 2) Limpiamos valores y renombramos los name usando _1, _2, _3…
+    clon.querySelectorAll("input, select, textarea").forEach(el => {
+      // — opcional: vaciamos el valor para que no arrastre datos del original —
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+        el.value = '';
+        if (el.type === 'select-one') el.selectedIndex = 0;
+      }
+      // renombramos el atributo name
+      const name = el.getAttribute("name");
+      if (name) {
+        el.setAttribute("name", `${name}_${contadorOperarios}`);
+      }
+    });
+
+    // 3) Construimos el contenedor visual (igual que antes)
     const bloque = document.createElement("div");
     bloque.classList.add("bloque-operario");
 
@@ -235,7 +243,6 @@
     separador.style.margin = "20px 0";
     bloque.appendChild(separador);
 
-    // Cabecera
     const cabecera = document.createElement("div");
     cabecera.style.display = "flex";
     cabecera.style.justifyContent = "space-between";
@@ -248,26 +255,24 @@
     titulo.style.fontSize = "18px";
     titulo.style.fontWeight = "bold";
     titulo.style.borderBottom = "2px solid #1e7e34";
+    titulo.textContent = `Operario ${contadorOperarios}`;
+    cabecera.appendChild(titulo);
 
     const botonEliminar = document.createElement("button");
-    botonEliminar.textContent = "🗑️ Eliminar";
     botonEliminar.type = "button";
-    botonEliminar.style.backgroundColor = "#dc3545";
-    botonEliminar.style.color = "#fff";
-    botonEliminar.style.border = "none";
-    botonEliminar.style.padding = "6px 12px";
-    botonEliminar.style.borderRadius = "4px";
-    botonEliminar.style.cursor = "pointer";
-    botonEliminar.style.fontSize = "14px";
-
+    botonEliminar.textContent = "🗑️ Eliminar";
+    botonEliminar.style.cssText = `
+      background-color: #dc3545; color: #fff; border: none;
+      padding: 6px 12px; border-radius: 4px;
+      cursor: pointer; font-size: 14px;
+    `;
     botonEliminar.onclick = () => {
       bloque.remove();
       renumerarOperarios();
       mostrarBotonAgregar();
     };
-
-    cabecera.appendChild(titulo);
     cabecera.appendChild(botonEliminar);
+
     bloque.appendChild(cabecera);
     bloque.appendChild(clon);
     container.appendChild(bloque);
@@ -275,7 +280,6 @@
     renumerarOperarios();
     mostrarBotonAgregar();
   }
-
   function renumerarOperarios() {
       const bloques = document.querySelectorAll("#operariosContainer > .bloque-operario, #operariosContainer > .detalle-operario");
       bloques.forEach((bloque, index) => {
@@ -287,7 +291,6 @@
           campoOperario.value = `Operario ${numero}`;
       }
     });
-    contadorOperarios = document.querySelectorAll("#operariosContainer .detalle-operario, .bloque-operario").length;
   }
 
   function mostrarBotonAgregar() {
