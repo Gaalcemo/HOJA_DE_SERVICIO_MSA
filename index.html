@@ -136,22 +136,22 @@
       <div id="operariosContainer">
         <div class="detalle-operario">
           <label>Fecha día trabajado:</label>
-          <input type="date" name="fecha_dia" class="short" />
+          <input type="date" name="fecha_dia[]" class="short" />
 
           <label>Operario:</label>
-          <input type="text" name="operario" class="medium" />
+          <input type="text" name="operario[]" class="medium" />
 
           <label>Hora Entrada:</label>
-          <input type="time" name="entrada" class="time" onchange="calcularHorasPorElemento(this)" />
+          <input type="time" name="entrada[]" class="time" onchange="calcularHorasPorElemento(this)" />
 
           <label>Hora Salida:</label>
-          <input type="time" name="salida" class="time" onchange="calcularHorasPorElemento(this)" />
+          <input type="time" name="salida[]" class="time" onchange="calcularHorasPorElemento(this)" />
 
           <label>Nº Horas:</label>
-          <input type="text" name="horas" readonly class="hours" />
+          <input type="text" name="horas[]" readonly class="hours" />
 
           <label>Tipo de hora:</label>
-          <select name="tipo_hora" required class="medium">
+          <select name="tipo_hora[]" required class="medium">
             <option value="" disabled selected>Seleccionar tipo</option>
             <option value="NORMAL">NORMAL</option>
             <option value="NOCTURNA">NOCTURNA</option>
@@ -160,10 +160,10 @@
           </select>
 
           <label>Precio unitario:</label>
-          <input type="number" name="precio" step="0.01" class="short" />
+          <input type="number" name="precio[]" step="0.01" class="short" />
 
           <label>Importe:</label>
-          <input type="number" name="importe" step="0.01" class="short" />
+          <input type="number" name="importe[]" step="0.01" class="short" />
         </div>
       </div>
       <button type="button" onclick="agregarOperario()">Añadir Técnico</button>
