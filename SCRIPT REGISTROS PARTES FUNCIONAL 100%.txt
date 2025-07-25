@@ -1,0 +1,197 @@
+SCRIPT SIN doPost PERO QUE SI FUNCIONA BIEN PARA LLEVAR LOS DATOS AL GOOGLE SHEETS "HOJA DE SERVICIO MSA 2025"
+Y TAMBIEN PARA GENERAR EL PDF CON FUNCION onOpen DEL SCRIPT DE APPSCRIPT trae_data_web; DEL PROYECTO QUE SE LLAMA
+REGISTROS_PARTES; LLEVA LOS PDF AL DRIVE, EN ESTE MOMENTO A LA CARPETA Hoja de Servicio - MSA, QUE ESTA EN EL DRIVE
+DE MANSERA
+
+// File: Code.gs
+/*
+ * Apps Script para generación de un único PDF con múltiples operarios
+ * – Formatea horas de entrada/salida a HH:mm
+ * – Calcula automáticamente Nº Hrs
+ * – Ordena registros por fecha ascendente
+ * – Elimina filas sobrantes de la tabla
+ * – Nombra el PDF usando el filtro de semana
+ * – Registra timestamp en “FECHA ENVIO” al llegar cada nuevo formulario
+ */
+
+const TEMPLATE_ID      = '14PCr1pgbY0HeHrGUv-w5fK_NmdDfntRVzJbLixtY5PE';
+const SHEET_ID         = SpreadsheetApp.getActive().getId();
+const TARGET_FOLDER_ID = '1BBmVffFm8KQkmgRyqaR04UnqQYOA-bGJ';
+const MAX_ROWS         = 6; // Máximo filas en la tabla de técnicos
+
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('Informes PDF')
+    .addItem('Generar informe', 'showFilterSidebar')
+    .addToUi();
+}
+
+function showFilterSidebar() {
+  const tpl  = HtmlService.createTemplateFromFile('Sidebar');
+  const opts = getFilterOptions();
+  tpl.clientes  = opts.clientes;
+  tpl.operarios = opts.operarios;
+  tpl.semanas   = opts.semanas;
+  SpreadsheetApp.getUi()
+    .showSidebar(tpl.evaluate().setTitle('Filtros Informe'));
+}
+
+function getFilterOptions() {
+  const sheet   = SpreadsheetApp.openById(SHEET_ID).getSheetByName('REGISTROS');
+  const vals    = sheet.getDataRange().getValues();
+  const headers = vals.shift().map(h=>h.toString().toUpperCase());
+  const iC = headers.indexOf('CLIENTE'),
+        iO = headers.indexOf('OPERARIO'),
+        iS = headers.indexOf('SEMANA');
+  const sC = new Set(), sO = new Set(), sS = new Set();
+  vals.forEach(r => {
+    if (iC>=0 && r[iC]) sC.add(r[iC]);
+    if (iO>=0 && r[iO]) sO.add(r[iO]);
+    if (iS>=0 && r[iS]) sS.add(r[iS]);
+  });
+  return {
+    clientes:  Array.from(sC).sort(),
+    operarios: Array.from(sO).sort(),
+    semanas:   Array.from(sS).map(Number).sort((a,b)=>a-b).map(String)
+  };
+}
+
+function getFilteredData(filters) {
+  const sheet   = SpreadsheetApp.openById(SHEET_ID).getSheetByName('REGISTROS');
+  const rows    = sheet.getDataRange().getValues();
+  const rawH    = rows.shift();
+  const headers = rawH.map(h=>h.toString().toUpperCase());
+  const iC = headers.indexOf('CLIENTE'),
+        iO = headers.indexOf('OPERARIO'),
+        iS = headers.indexOf('SEMANA');
+  return rows.filter(r => {
+    let ok = true;
+    if (filters.cliente)  ok = ok && String(r[iC])  === filters.cliente;
+    if (filters.semana)   ok = ok && String(r[iS])  === filters.semana;
+    if (filters.operarios && filters.operarios.length)
+      ok = ok && filters.operarios.includes(String(r[iO]));
+    return ok;
+  }).map(r => {
+    const obj = {};
+    rawH.forEach((h,i) => obj[h.toString().replace(/\s+/g,'_')] = r[i]);
+    // Normaliza campos
+    obj.FECHA        = parseDate(obj.FECHA);
+    obj.HORA_ENTRADA = parseTime(obj.HORA_ENTRADA);
+    obj.HORA_SALIDA  = parseTime(obj.HORA_SALIDA);
+    obj['Nº_HORAS']  = calcHoursDiff(obj.HORA_ENTRADA, obj.HORA_SALIDA);
+    return obj;
+  });
+}
+
+function parseDate(v) {
+  if (v instanceof Date) return v;
+  const d = new Date(v);
+  return isNaN(d)? null : d;
+}
+
+function parseTime(v) {
+  if (v instanceof Date) {
+    return Utilities.formatDate(v, Session.getScriptTimeZone(), 'HH:mm');
+  }
+  if (typeof v==='string' && /^\d{1,2}:\d{2}/.test(v)) {
+    return v;
+  }
+  return null;
+}
+
+function calcHoursDiff(hEntry, hExit) {
+  if (!hEntry||!hExit) return '';
+  const [h1,m1]=hEntry.split(':').map(Number),
+        [h2,m2]=hExit.split(':').map(Number);
+  let diff = (h2*60+m2)-(h1*60+m1);
+  if (diff<0) diff+=24*60;
+  return (diff/60).toFixed(2);
+}
+
+function generateReport(filters) {
+  const ui = SpreadsheetApp.getUi();
+  ui.alert('🚀 Generando informe único...');
+  let items = getFilteredData(filters);
+  if (!items.length) return ui.alert('No se encontraron registros.');
+
+  // Orden ascendente por fecha
+  items.sort((a,b)=> a.FECHA - b.FECHA);
+
+  const folder = DriveApp.getFolderById(TARGET_FOLDER_ID);
+  const copy   = DriveApp.getFileById(TEMPLATE_ID).makeCopy();
+  const doc    = DocumentApp.openById(copy.getId());
+  const body   = doc.getBody();
+
+  // Generales (primer registro)
+  const general = items[0];
+  Object.keys(general).forEach(key=>{
+    const tag = `{{${key.toUpperCase()}}}`;
+    let val = general[key];
+    if (key.toUpperCase().includes('FECHA') && val instanceof Date) {
+      val = Utilities.formatDate(val, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+    }
+    body.replaceText(tag, val||'');
+  });
+
+  // Tabla técnicos
+  let techTable;
+  body.getTables().some(t=>{
+    if (t.getRow(1).getText().includes('{{OPERARIO_1}}')) {
+      techTable = t; return true;
+    }
+  });
+
+  if (techTable) {
+    items.forEach((it,idx)=>{
+      const row = idx+1;
+      // FECHA
+      const f = it.FECHA instanceof Date
+              ? Utilities.formatDate(it.FECHA, Session.getScriptTimeZone(), 'dd/MM/yyyy')
+              : '';
+      techTable.getCell(row,0).setText(f);
+      // OPERARIO
+      techTable.getCell(row,1).setText(it.OPERARIO||'');
+      // H. Entra
+      techTable.getCell(row,2).setText(it.HORA_ENTRADA||'');
+      // H. Sali
+      techTable.getCell(row,3).setText(it.HORA_SALIDA||'');
+      // Nº Hrs
+      techTable.getCell(row,4).setText(it['Nº_HORAS']||'');
+      // Tipo Hora
+      techTable.getCell(row,5).setText(it.TIPO_DE_HORA||'');
+      // P. Unit
+      techTable.getCell(row,6).setText(it.PRECIO_UNITARIO||'');
+      // Importe
+      techTable.getCell(row,7).setText(it.IMPORTE||'');
+    });
+    // Elimina filas vacías
+    while (techTable.getNumRows() > items.length+1) {
+      techTable.removeRow(techTable.getNumRows()-1);
+    }
+  }
+
+  doc.saveAndClose();
+  const filename = `${general.CLIENTE}_Semana${filters.semana}.pdf`;
+  const pdf = copy.getAs('application/pdf').setName(filename);
+  folder.createFile(pdf);
+  ui.alert(`✔ Informe "${filename}" generado y guardado en Drive.`);
+}
+
+// NUEVO: timestamp en FECHA ENVIO al recibir un envío de formulario
+function onFormSubmit(e) {
+  const sheet = SpreadsheetApp
+    .openById(SHEET_ID)
+    .getSheetByName('REGISTROS');
+  const headers = sheet.getRange(1,1,1,sheet.getLastColumn())
+                       .getValues()[0]
+                       .map(h=>h.toString().toUpperCase());
+  const col = headers.indexOf('FECHA ENVIO');
+  if (col<0) return;
+  // Última fila donde llegó el formulario
+  const row = sheet.getLastRow();
+  sheet.getRange(row, col+1).setValue(new Date());
+}
+
+function include(name) {
+  return HtmlService.createHtmlOutputFromFile(name).getContent();
+}

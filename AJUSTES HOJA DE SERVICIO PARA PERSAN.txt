@@ -1,0 +1,17 @@
+PERSAN - PARTES MENSUALES
+
+1 HOJA MENSUAL POR TECNICO (QUE TENGA LAS 4 SEMANAS)
+TOTAL TECNICOS EN PERSAN: 10
+TOTAL PARTES MENSUALES: 10
+
+Para esto se debe tener en cuenta que las semanas en el FILTRO deben ser de seleccion multiple con checkbox
+
+Los PDF se generan con nombre de Empresa_Semana#, para persan se debe generar con el nombre del tecnico en 
+lugar de ser Semana#
+
+esto no debe afectar para los otros clientes, que se seguira sacando PDF semanal entonces se seleccionara 
+solo la semana necesaria al momento del filtro
+
+En la plantilla, se deben ampliar los TAG hasta 30 para cubrir los dias del mes, en caso de que se trabaje 
+algun dia de fin de semana
+
