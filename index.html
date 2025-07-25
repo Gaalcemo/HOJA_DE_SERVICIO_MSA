@@ -212,27 +212,33 @@
   <script>
   let contadorOperarios = 0;
   const maxOperarios = 8;
-
-  function agregarOperario() {
-    const container = document.getElementById("operariosContainer");
-    const original  = container.querySelector(".detalle-operario");
-    const clon      = original.cloneNode(true);
-
-    // 1) Incrementamos el contador de operarios
-    contadorOperarios++;
-
-    // 2) Limpiamos valores y renombramos los name usando _1, _2, _3…
-    clon.querySelectorAll("input, select, textarea").forEach(el => {
-      // — opcional: vaciamos el valor para que no arrastre datos del original —
-      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-        el.value = '';
-        if (el.type === 'select-one') el.selectedIndex = 0;
-      }
-      // renombramos el atributo name
-      const name = el.getAttribute("name");
-      if (name) {
-        el.setAttribute("name", `${name}_${contadorOperarios}`);
-      }
+            /* (ICONO DE COMENTARIO)
+            
+            SE DEJA COMENTADA LA FUNCION DE AGREGAR TECNICO PARA PODER USAR SOLO DE A UN TECNICO EN CADA FORMULARIO, 
+            MIENTRAS SE LOGRA SOLUCIONAR EL TEMA DE QUE ENVIE LOS DATOS DEL TECNICO 2
+            --- INICIO DE FUNCION ---
+              function agregarOperario() {
+                const container = document.getElementById("operariosContainer");
+                const original  = container.querySelector(".detalle-operario");
+                const clon      = original.cloneNode(true);
+            
+                // 1) Incrementamos el contador de operarios
+                contadorOperarios++;
+            
+                // 2) Limpiamos valores y renombramos los name usando _1, _2, _3…
+                clon.querySelectorAll("input, select, textarea").forEach(el => {
+                  // — opcional: vaciamos el valor para que no arrastre datos del original —
+                  if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                    el.value = '';
+                    if (el.type === 'select-one') el.selectedIndex = 0;
+                  }
+                  // renombramos el atributo name
+                  const name = el.getAttribute("name");
+                  if (name) {
+                    el.setAttribute("name", `${name}_${contadorOperarios}`);
+                  }
+                  --- FIN DE FUNCION ---
+                  (ICONO DE COMENTARIO) */ 
     });
 
     // 3) Construimos el contenedor visual (igual que antes)
