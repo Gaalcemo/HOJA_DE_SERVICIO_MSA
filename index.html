@@ -1,5 +1,3 @@
-<!-- ESTE SCRIPT QUEDO TOTALMENTE FUNCIONAL, LLEVA LOS DATOS DE TODOS LOS TECNICOS
-A LA HOJA DE GOOGLE SHEETS, SIN FALLOS-->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -91,7 +89,6 @@ A LA HOJA DE GOOGLE SHEETS, SIN FALLOS-->
       text-align: right;
       margin-top: 10px;
     }
-    /* Botón añadir técnico estilo secundario */
     #btnAgregarOperario {
       background: #007bff;
       margin-left: 0;
@@ -134,10 +131,10 @@ A LA HOJA DE GOOGLE SHEETS, SIN FALLOS-->
       <input type="text" id="direccion" name="direccion" class="full" />
 
       <label for="instalacion">Instalación:</label>
-      <input type="text" id="instalacion" name="instalacion" class="full" />
+      <input type="text" id="instalacion" name="instalacion" class="full" required />
 
       <label for="descripcion">Descripción del trabajo:</label>
-      <textarea id="descripcion" name="descripcion" rows="6" class="full"></textarea>
+      <textarea id="descripcion" name="descripcion" rows="6" class="full" required></textarea>
     </div>
 
     <div class="form-section">
@@ -145,10 +142,10 @@ A LA HOJA DE GOOGLE SHEETS, SIN FALLOS-->
       <div id="operariosContainer">
         <div class="detalle-operario">
           <label>Fecha día trabajado:</label>
-          <input type="date" name="fecha_dia" class="short" />
+          <input type="date" name="fecha_dia" class="short" required />
 
-          <label>Operario:</label>
-          <input type="text" name="operario" class="medium" />
+          <label>NOMBRE OPERARIO:</label>
+          <input type="text" name="operario" class="medium" required />
 
           <label>Hora Entrada:</label>
           <input type="time" name="entrada" class="time" onchange="calcularHorasPorElemento(this)" />
@@ -169,10 +166,10 @@ A LA HOJA DE GOOGLE SHEETS, SIN FALLOS-->
           </select>
 
           <label>Precio unitario:</label>
-          <input type="number" name="precio" step="0.01" class="short" />
+          <input type="number" name="precio" step="0.01" class="short" value="0" />
 
           <label>Importe:</label>
-          <input type="number" name="importe" step="0.01" class="short" />
+          <input type="number" name="importe" step="0.01" class="short" value="0" />
         </div>
       </div>
       <button type="button" id="btnAgregarOperario" onclick="agregarOperario()">Añadir Técnico</button>
@@ -198,12 +195,42 @@ A LA HOJA DE GOOGLE SHEETS, SIN FALLOS-->
           </thead>
           <tbody>
             <!-- 6 filas -->
-            <tr><td><input type="number" name="cantidad_1" class="cantidad" oninput="calcularImporte(this)" /></td><td><input type="text" name="concepto_1" /></td><td><input type="number" name="precioU_1" step="0.01" class="precioU" oninput="calcularImporte(this)" /></td><td><input type="number" name="importeFila_1" class="importeFila" readonly /></td></tr>
-            <tr><td><input type="number" name="cantidad_2" class="cantidad" oninput="calcularImporte(this)" /></td><td><input type="text" name="concepto_2" /></td><td><input type="number" name="precioU_2" step="0.01" class="precioU" oninput="calcularImporte(this)" /></td><td><input type="number" name="importeFila_2" class="importeFila" readonly /></td></tr>
-            <tr><td><input type="number" name="cantidad_3" class="cantidad" oninput="calcularImporte(this)" /></td><td><input type="text" name="concepto_3" /></td><td><input type="number" name="precioU_3" step="0.01" class="precioU" oninput="calcularImporte(this)" /></td><td><input type="number" name="importeFila_3" class="importeFila" readonly /></td></tr>
-            <tr><td><input type="number" name="cantidad_4" class="cantidad" oninput="calcularImporte(this)" /></td><td><input type="text" name="concepto_4" /></td><td><input type="number" name="precioU_4" step="0.01" class="precioU" oninput="calcularImporte(this)" /></td><td><input type="number" name="importeFila_4" class="importeFila" readonly /></td></tr>
-            <tr><td><input type="number" name="cantidad_5" class="cantidad" oninput="calcularImporte(this)" /></td><td><input type="text" name="concepto_5" /></td><td><input type="number" name="precioU_5" step="0.01" class="precioU" oninput="calcularImporte(this)" /></td><td><input type="number" name="importeFila_5" class="importeFila" readonly /></td></tr>
-            <tr><td><input type="number" name="cantidad_6" class="cantidad" oninput="calcularImporte(this)" /></td><td><input type="text" name="concepto_6" /></td><td><input type="number" name="precioU_6" step="0.01" class="precioU" oninput="calcularImporte(this)" /></td><td><input type="number" name="importeFila_6" class="importeFila" readonly /></td></tr>
+            <tr>
+              <td><input type="number" name="cantidad_1" class="cantidad" oninput="calcularImporte(this)" /></td>
+              <td><input type="text" name="concepto_1" /></td>
+              <td><input type="number" name="precioU_1" step="0.01" class="precioU" oninput="calcularImporte(this)" value="0" /></td>
+              <td><input type="number" name="importeFila_1" class="importeFila" readonly /></td>
+            </tr>
+            <tr>
+              <td><input type="number" name="cantidad_2" class="cantidad" oninput="calcularImporte(this)" /></td>
+              <td><input type="text" name="concepto_2" /></td>
+              <td><input type="number" name="precioU_2" step="0.01" class="precioU" oninput="calcularImporte(this)" value="0" /></td>
+              <td><input type="number" name="importeFila_2" class="importeFila" readonly /></td>
+            </tr>
+            <tr>
+              <td><input type="number" name="cantidad_3" class="cantidad" oninput="calcularImporte(this)" /></td>
+              <td><input type="text" name="concepto_3" /></td>
+              <td><input type="number" name="precioU_3" step="0.01" class="precioU" oninput="calcularImporte(this)" value="0" /></td>
+              <td><input type="number" name="importeFila_3" class="importeFila" readonly /></td>
+            </tr>
+            <tr>
+              <td><input type="number" name="cantidad_4" class="cantidad" oninput="calcularImporte(this)" /></td>
+              <td><input type="text" name="concepto_4" /></td>
+              <td><input type="number" name="precioU_4" step="0.01" class="precioU" oninput="calcularImporte(this)" value="0" /></td>
+              <td><input type="number" name="importeFila_4" class="importeFila" readonly /></td>
+            </tr>
+            <tr>
+              <td><input type="number" name="cantidad_5" class="cantidad" oninput="calcularImporte(this)" /></td>
+              <td><input type="text" name="concepto_5" /></td>
+              <td><input type="number" name="precioU_5" step="0.01" class="precioU" oninput="calcularImporte(this)" value="0" /></td>
+              <td><input type="number" name="importeFila_5" class="importeFila" readonly /></td>
+            </tr>
+            <tr>
+              <td><input type="number" name="cantidad_6" class="cantidad" oninput="calcularImporte(this)" /></td>
+              <td><input type="text" name="concepto_6" /></td>
+              <td><input type="number" name="precioU_6" step="0.01" class="precioU" oninput="calcularImporte(this)" value="0" /></td>
+              <td><input type="number" name="importeFila_6" class="importeFila" readonly /></td>
+            </tr>
           </tbody>
         </table>
         <div class="totals">
@@ -231,21 +258,23 @@ A LA HOJA DE GOOGLE SHEETS, SIN FALLOS-->
 
       contadorOperarios++;
 
-      // Limpiar valores y renombrar atributos name
       clon.querySelectorAll("input, select, textarea").forEach(el => {
-        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-          el.value = '';
+        const name = el.getAttribute("name");
+        if (name) el.setAttribute("name", `${name}_${contadorOperarios}`);
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          if (el.name.startsWith("precio") || el.name.startsWith("importe")) {
+            el.value = "0";
+          } else if (!el.readOnly) {
+            el.value = "";
+          }
         }
-        if (el.tagName === 'SELECT') {
+        if (el.tagName === "SELECT") {
           el.selectedIndex = 0;
         }
-        const name = el.getAttribute("name");
-        if (name) {
-          el.setAttribute("name", `${name}_${contadorOperarios}`);
-        }
+        if (el.name.startsWith("fecha_dia")) el.required = true;
+        if (el.name.startsWith("operario")) el.required = true;
       });
 
-      // Crear bloque contenedor
       const bloque = document.createElement("div");
       bloque.classList.add("bloque-operario");
 
@@ -295,9 +324,8 @@ A LA HOJA DE GOOGLE SHEETS, SIN FALLOS-->
     function renumerarOperarios() {
       const bloques = document.querySelectorAll("#operariosContainer > .bloque-operario");
       bloques.forEach((bloque, i) => {
-        const numero = i + 2; // El primero es .detalle-operario original
         const titulo = bloque.querySelector("h4");
-        if (titulo) titulo.textContent = `Operario ${numero}`;
+        if (titulo) titulo.textContent = `Operario ${i+2}`;
       });
     }
 
@@ -311,98 +339,74 @@ A LA HOJA DE GOOGLE SHEETS, SIN FALLOS-->
       const entrada = contenedor.querySelector('input[name^="entrada"]');
       const salida = contenedor.querySelector('input[name^="salida"]');
       const horas = contenedor.querySelector('input[name^="horas"]');
-
       if (entrada.value && salida.value) {
         const [h1, m1] = entrada.value.split(':').map(Number);
         const [h2, m2] = salida.value.split(':').map(Number);
-        let start = new Date(0, 0, 0, h1, m1);
-        let end   = new Date(0, 0, 0, h2, m2);
-        if (end < start) end.setDate(end.getDate() + 1);
-        const diff = end - start;
-        const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
-        const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
-        horas.value = `${h}:${m}`;
+        let start = new Date(0,0,0,h1,m1), end = new Date(0,0,0,h2,m2);
+        if (end<start) end.setDate(end.getDate()+1);
+        const diff = end-start;
+        horas.value = `${String(Math.floor(diff/3600000)).padStart(2,'0')}:${String(Math.floor((diff%3600000)/60000)).padStart(2,'0')}`;
       }
     }
 
     function toggleOpcionales() {
-      const seccion = document.getElementById('opcionalContainer');
-      const mostrar = document.getElementById('mostrarOpcionales').value;
-      seccion.style.display = mostrar === 'si' ? 'block' : 'none';
+      document.getElementById('opcionalContainer').style.display =
+        document.getElementById('mostrarOpcionales').value==='si' ? 'block' : 'none';
     }
 
     function calcularImporte(element) {
       const fila = element.closest('tr');
-      const cantidad = parseFloat(fila.querySelector('.cantidad').value) || 0;
-      const precio   = parseFloat(fila.querySelector('.precioU').value) || 0;
-      fila.querySelector('.importeFila').value = (cantidad * precio).toFixed(2);
-
-      let subtotal = 0;
-      document.querySelectorAll('.importeFila').forEach(el => {
-        subtotal += parseFloat(el.value) || 0;
-      });
-      document.getElementById('subtotal').value = subtotal.toFixed(2);
-      document.getElementById('total').value    = subtotal.toFixed(2);
+      const cantidad = parseFloat(fila.querySelector('.cantidad').value)||0;
+      const precio   = parseFloat(fila.querySelector('.precioU').value)||0;
+      fila.querySelector('.importeFila').value = (cantidad*precio).toFixed(2);
+      let subtotal=0;
+      document.querySelectorAll('.importeFila').forEach(el=>subtotal+=parseFloat(el.value)||0);
+      document.getElementById('subtotal').value=subtotal.toFixed(2);
+      document.getElementById('total').value=subtotal.toFixed(2);
     }
 
     function asignarDatosCliente() {
-      const select = document.getElementById('cliente');
-      const opt    = select.options[select.selectedIndex];
-      document.getElementById('expediente').value = opt.dataset.expediente || '';
-      document.getElementById('poblacion').value   = opt.dataset.poblacion || '';
-      document.getElementById('direccion').value   = opt.dataset.direccion || '';
+      const sel=document.getElementById('cliente'), opt=sel.options[sel.selectedIndex];
+      document.getElementById('expediente').value=opt.dataset.expediente||'';
+      document.getElementById('poblacion').value=opt.dataset.poblacion||'';
+      document.getElementById('direccion').value=opt.dataset.direccion||'';
     }
 
     window.onload = () => {
       fetch('https://script.google.com/macros/s/AKfycbxCRbkMyzRs-JcX-SY05y2qxh9y0eWzNGNoeGtwb0oLW3xMU6QsPuVpowdGydYPMGrm/exec')
-        .then(res => res.text())
-        .then(num => {
-          document.getElementById('num_formulario').value = num;
-        })
-        .catch(() => {
-          document.getElementById('num_formulario').value = 'ERROR';
-        });
+        .then(res=>res.text())
+        .then(num=>document.getElementById('num_formulario').value=num)
+        .catch(()=>document.getElementById('num_formulario').value='ERROR');
       mostrarBotonAgregar();
     };
 
     document.getElementById("hojaServicioForm").addEventListener("submit", function(e) {
       e.preventDefault();
       const bloques = document.querySelectorAll("#operariosContainer .bloque-operario, #operariosContainer > .detalle-operario");
-      for (let i = 0; i < bloques.length; i++) {
-        const bloque  = bloques[i];
-        const oper    = bloque.querySelector('input[name^="operario"]');
-        const ent     = bloque.querySelector('input[name^="entrada"]');
-        const sal     = bloque.querySelector('input[name^="salida"]');
-        if (!oper.value.trim()) {
-          return alert(`Falta el nombre del operario en el bloque ${i+1}`);
-        }
-        if (!ent.value || !sal.value) {
-          return alert(`Falta hora de entrada o salida en el bloque ${i+1}`);
-        }
+      for (let i=0; i<bloques.length; i++) {
+        const b=bloques[i];
+        const f=b.querySelector('input[name^="fecha_dia"]');
+        const o=b.querySelector('input[name^="operario"]');
+        const en=b.querySelector('input[name^="entrada"]');
+        const sa=b.querySelector('input[name^="salida"]');
+        if (!f.value) return alert(`Falta la fecha trabajada en el bloque ${i+1}`);
+        if (!o.value.trim()) return alert(`Falta el nombre del operario en el bloque ${i+1}`);
+        if (!en.value||!sa.value) return alert(`Falta hora de entrada o salida en el bloque ${i+1}`);
       }
-      const form = e.target;
-      const btn  = form.querySelector('button[type="submit"]');
-      btn.disabled    = true;
-      btn.textContent = "Enviando...";
-      const data = new FormData(form);
+      const form=this, btn=form.querySelector('button[type="submit"]');
+      btn.disabled=true; btn.textContent="Enviando...";
+      const data=new FormData(form);
       fetch("https://script.google.com/macros/s/AKfycbxCRbkMyzRs-JcX-SY05y2qxh9y0eWzNGNoeGtwb0oLW3xMU6QsPuVpowdGydYPMGrm/exec", {
-        method: "POST",
-        body: data
+        method:"POST", body:data
       })
-      .then(res => res.text())
-      .then(resp => {
-        if (resp === "OK") {
+      .then(res=>res.text())
+      .then(resp=>{
+        if(resp==="OK"){
           alert("Datos enviados correctamente.");
-          form.reset();
-          toggleOpcionales();
-          location.reload();
-        } else {
-          alert("Error en respuesta del servidor: " + resp);
-        }
+          form.reset(); toggleOpcionales(); location.reload();
+        } else alert("Error en respuesta del servidor: "+resp);
       })
-      .catch(err => {
-        alert("Error al enviar datos: " + err.message);
-      });
+      .catch(err=>alert("Error al enviar datos: "+err.message));
     });
   </script>
 </body>
