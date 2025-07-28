@@ -1,0 +1,66 @@
+<!-- File: Sidebar.html -->
+<? /** Sidebar template con checkboxes para operarios y semanas, CSP ajustada */ ?>
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
+  <style>
+    body { font-family: sans-serif; padding: 10px; }
+    label { display: block; margin-top: 8px; }
+    .ops { max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; }
+    button { width: 100%; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <h3>Filtrar informe</h3>
+
+  <label>Cliente:</label>
+  <select id="cliente">
+    <option value="">(Todos)</option>
+    <? for (let c of clientes) { ?>
+      <option value="<?!= c ?>"><?!= c ?></option>
+    <? } ?>
+  </select>
+
+  <label>Semanas:</label>
+  <div class="ops">
+    <? for (let s of semanas) { ?>
+      <label>
+        <input type="checkbox" class="semana" value="<?!= s ?>" />
+        <?!= s ?>
+      </label>
+    <? } ?>
+  </div>
+
+  <label>Operarios:</label>
+  <div class="ops">
+    <? for (let o of operarios) { ?>
+      <label>
+        <input type="checkbox" class="operario" value="<?!= o ?>" />
+        <?!= o ?>
+      </label>
+    <? } ?>
+  </div>
+
+  <button type="button" onclick="submitFilters()">Generar informe</button>
+
+  <script>
+    function submitFilters() {
+      const cliente = document.getElementById('cliente').value;
+      const semanas = Array.from(document.querySelectorAll('.semana'))
+                           .filter(ch => ch.checked)
+                           .map(ch => ch.value);
+      const ops     = Array.from(document.querySelectorAll('.operario'))
+                           .filter(ch => ch.checked)
+                           .map(ch => ch.value);
+
+      google.script.run
+        .withSuccessHandler(() => google.script.host.close())
+        .withFailureHandler(err => alert('Error: ' + err.message))
+        .generateReport({ cliente, semanas, operarios: ops });
+    }
+  </script>
+</body>
+</html>
