@@ -1,0 +1,255 @@
+// File: Code.gs
+/*
+ * Apps Script para generación de un único PDF con múltiples operarios,
+ * con:
+ *   • campo manual de N° consecutivo en header y cuerpo
+ *   • tabla completa de técnicos
+ *   • sección DESCRIPCIÓN deduplicada (misma fecha + mismo texto)
+ *   • fecha prefijada en cada bloque
+ *   • saltos de línea para texto ilimitado
+ *   • validación de filtros, escape de regex y saneado de nombres
+ */
+
+const TEMPLATE_ID      = '14PCr1pgbY0HeHrGUv-w5fK_NmdDfntRVzJbLixtY5PE';
+const SHEET_ID         = SpreadsheetApp.getActive().getId();
+const TARGET_FOLDER_ID = '1BBmVffFm8KQkmgRyqaR04UnqQYOA-bGJ';
+
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('Informes PDF')
+    .addItem('Generar informe', 'showFilterSidebar')
+    .addToUi();
+}
+
+function showFilterSidebar() {
+  const tpl  = HtmlService.createTemplateFromFile('Sidebar');
+  const opts = getFilterOptions();
+  tpl.clientes  = opts.clientes;
+  tpl.operarios = opts.operarios;
+  tpl.semanas   = opts.semanas;
+  const html = tpl.evaluate().setTitle('Filtros Informe');
+  if (HtmlService.XFrameOptionsMode && HtmlService.XFrameOptionsMode.DENY != null) {
+    html.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.DENY);
+  }
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+function getFilterOptions() {
+  const sheet   = SpreadsheetApp.openById(SHEET_ID).getSheetByName('REGISTROS');
+  const vals    = sheet.getDataRange().getValues();
+  const headers = vals.shift().map(h=>h.toString().toUpperCase());
+  const iC = headers.indexOf('CLIENTE'),
+        iO = headers.indexOf('OPERARIO'),
+        iS = headers.indexOf('SEMANA');
+  const sC=new Set(), sO=new Set(), sS=new Set();
+  vals.forEach(r=>{
+    if (iC>=0 && r[iC]) sC.add(r[iC]);
+    if (iO>=0 && r[iO]) sO.add(r[iO]);
+    if (iS>=0 && r[iS]) sS.add(r[iS]);
+  });
+  return {
+    clientes:  Array.from(sC).sort(),
+    operarios: Array.from(sO).sort(),
+    semanas:   Array.from(sS).map(Number).sort((a,b)=>a-b).map(String)
+  };
+}
+
+function assertValidFilters(filters) {
+  const opts = getFilterOptions();
+  if (filters.cliente && !opts.clientes.includes(filters.cliente))
+    throw new Error('Cliente no válido');
+  if (filters.semanas) filters.semanas.forEach(s=>{
+    if (!opts.semanas.includes(s)) throw new Error('Semana no válida: '+s);
+  });
+  if (filters.operarios) filters.operarios.forEach(o=>{
+    if (!opts.operarios.includes(o)) throw new Error('Operario no válido: '+o);
+  });
+}
+
+function escapeForRegex(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+}
+
+function sanitizeFilename(name) {
+  return name.replace(/[^a-zA-Z0-9 _-]/g,'').trim();
+}
+
+function getFilteredData(filters) {
+  const sheet   = SpreadsheetApp.openById(SHEET_ID).getSheetByName('REGISTROS');
+  const rows    = sheet.getDataRange().getValues();
+  const rawH    = rows.shift();
+  const headers = rawH.map(h=>h.toString().toUpperCase());
+  const iC = headers.indexOf('CLIENTE'),
+        iO = headers.indexOf('OPERARIO'),
+        iS = headers.indexOf('SEMANA');
+  return rows
+    .filter(r=>{
+      let ok = true;
+      if (filters.cliente)           ok = ok && String(r[iC]) === filters.cliente;
+      if (filters.semanas?.length)   ok = ok && filters.semanas.includes(String(r[iS]));
+      if (filters.operarios?.length) ok = ok && filters.operarios.includes(String(r[iO]));
+      return ok;
+    })
+    .map(r=>{
+      const obj = {};
+      rawH.forEach((h,i)=> obj[h.toString().replace(/\s+/g,'_')] = r[i]);
+      obj.FECHA        = parseDate(obj.FECHA);
+      obj.HORA_ENTRADA = parseTime(obj.HORA_ENTRADA);
+      obj.HORA_SALIDA  = parseTime(obj.HORA_SALIDA);
+      obj['Nº_HORAS']  = calcHoursDiff(obj.HORA_ENTRADA, obj.HORA_SALIDA);
+      return obj;
+    });
+}
+
+function parseDate(v) {
+  if (v instanceof Date) return v;
+  const d = new Date(v);
+  return isNaN(d)? null : d;
+}
+
+function parseTime(v) {
+  if (v instanceof Date) {
+    return Utilities.formatDate(v, Session.getScriptTimeZone(), 'HH:mm');
+  }
+  if (typeof v==='string' && /^\d{1,2}:\d{2}/.test(v)) {
+    return v;
+  }
+  return null;
+}
+
+function calcHoursDiff(h1, h2) {
+  if (!h1||!h2) return '';
+  const [H1,M1] = h1.split(':').map(Number),
+        [H2,M2] = h2.split(':').map(Number);
+  let diff = (H2*60+M2)-(H1*60+M1);
+  if (diff<0) diff+=24*60;
+  return (diff/60).toFixed(2);
+}
+
+function generateReport(filters) {
+  assertValidFilters(filters);
+
+  // ① Validar N° consecutivo
+  const consecutivo = (filters.consecutivo||'').trim();
+  if (!consecutivo) {
+    SpreadsheetApp.getUi().alert('⚠️ Por favor ingresa el N° de consecutivo.');
+    return;
+  }
+
+  const ui = SpreadsheetApp.getUi();
+  ui.alert('🚀 Generando informe único...');
+
+  // ② Datos para la TABLA (todos los técnicos)
+  const fullItems = getFilteredData(filters);
+  if (!fullItems.length) {
+    ui.alert('No se encontraron registros...');
+    return;
+  }
+  fullItems.sort((a,b)=>a.FECHA - b.FECHA);
+
+  // ③ Datos para la DESCRIPCIÓN (deduplicado por fecha+texto)
+  const seenDesc = {};
+  const descItems = [];
+  fullItems.forEach(it => {
+    const dateKey = it.FECHA instanceof Date ? it.FECHA.getTime() : String(it.FECHA);
+    const raw     = it.DESCRIPCION || '';
+    const norm    = raw.split(/\r?\n/).map(l=>l.trim()).join('\n');
+    const key     = dateKey + '|' + norm;
+    if (!seenDesc[key]) {
+      seenDesc[key] = true;
+      descItems.push(it);
+    }
+  });
+
+  // ④ Abrir y preparar plantilla
+  const folder = DriveApp.getFolderById(TARGET_FOLDER_ID);
+  const copy   = DriveApp.getFileById(TEMPLATE_ID).makeCopy();
+  const doc    = DocumentApp.openById(copy.getId());
+
+  // ⑤ Reemplazar {{CONSECUTIVO}} en encabezado, pie y cuerpo
+  const header = doc.getHeader();
+  if (header) header.replaceText(escapeForRegex('{{CONSECUTIVO}}'), consecutivo);
+  const footer = doc.getFooter();
+  if (footer) footer.replaceText(escapeForRegex('{{CONSECUTIVO}}'), consecutivo);
+  const body = doc.getBody();
+  body.replaceText(escapeForRegex('{{CONSECUTIVO}}'), consecutivo);
+
+  // ⑥ Rellenar generales + DESCRIPCIÓN
+  const general = fullItems[0];
+  Object.keys(general).forEach(key => {
+    const tag = `{{${key.toUpperCase()}}}`;
+    if (key.toUpperCase() === 'DESCRIPCION') {
+      const bloques = descItems.map(it => {
+        const fechaStr = Utilities.formatDate(it.FECHA, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+        const lines    = (it.DESCRIPCION||'').split(/\r?\n/).map(l=>l.trim());
+        const first    = lines.shift()||'';
+        return [ `${fechaStr}: ${first}`, ...lines ].join('\n');
+      });
+      body.replaceText(escapeForRegex(tag), bloques.join('\n\n'));
+    } else {
+      let val = general[key] || '';
+      if (key.toUpperCase().includes('FECHA') && val instanceof Date) {
+        val = Utilities.formatDate(val, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+      }
+      body.replaceText(escapeForRegex(tag), String(val));
+    }
+  });
+
+  // ⑦ Rellenar tabla de técnicos
+  let techTable;
+  body.getTables().some(t=>{
+    if (t.getRow(1).getText().includes('{{OPERARIO_1}}')) {
+      techTable = t; return true;
+    }
+  });
+  if (techTable) {
+    fullItems.forEach((it,i)=>{
+      const row = i+1;
+      const f   = it.FECHA instanceof Date
+                ? Utilities.formatDate(it.FECHA, Session.getScriptTimeZone(), 'dd/MM/yyyy')
+                : '';
+      techTable.getCell(row,0).setText(f);
+      techTable.getCell(row,1).setText(it.OPERARIO        || '');
+      techTable.getCell(row,2).setText(it.HORA_ENTRADA    || '');
+      techTable.getCell(row,3).setText(it.HORA_SALIDA     || '');
+      techTable.getCell(row,4).setText(it['Nº_HORAS']     || '');
+      techTable.getCell(row,5).setText(it.TIPO_DE_HORA    || '');
+      techTable.getCell(row,6).setText(it.PRECIO_UNITARIO || '');
+      techTable.getCell(row,7).setText(it.IMPORTE         || '');
+    });
+    while (techTable.getNumRows() > fullItems.length+1) {
+      techTable.removeRow(techTable.getNumRows()-1);
+    }
+  }
+
+  // ⑧ Cerrar y exportar PDF (añadir consecutivo al nombre)
+  doc.saveAndClose();
+  const isSingle  = filters.semanas?.length === 1;
+  const MONTH_ABB = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const month     = general.FECHA instanceof Date
+                  ? MONTH_ABB[general.FECHA.getMonth()]
+                  : '';
+  let baseFilename = isSingle
+                   ? `${general.CLIENTE}_Semana${filters.semanas[0]}`
+                   : `${general.CLIENTE}_${general.OPERARIO}_${month}`;
+  baseFilename     = sanitizeFilename(baseFilename);
+  const filename   = `${baseFilename}_${consecutivo}.pdf`;
+
+  const pdf = copy.getAs('application/pdf').setName(filename);
+  DriveApp.getFolderById(TARGET_FOLDER_ID).createFile(pdf);
+  ui.alert(`✔ Informe "${filename}" generado y guardado en Drive.`);
+}
+
+function onFormSubmit(e) {
+  const sheet   = SpreadsheetApp.openById(SHEET_ID).getSheetByName('REGISTROS');
+  const headers = sheet.getRange(1,1,1,sheet.getLastColumn())
+                       .getValues()[0]
+                       .map(h=>h.toString().toUpperCase());
+  const col = headers.indexOf('FECHA ENVIO');
+  if (col<0) return;
+  sheet.getRange(sheet.getLastRow(), col+1).setValue(new Date());
+}
+
+function include(name) {
+  return HtmlService.createHtmlOutputFromFile(name).getContent();
+}
