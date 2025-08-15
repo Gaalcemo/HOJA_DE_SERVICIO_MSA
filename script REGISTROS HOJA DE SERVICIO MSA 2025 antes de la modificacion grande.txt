@@ -1,0 +1,292 @@
+// File: Code.gs
+/*
+ * Apps Script para generación de un único PDF con múltiples operarios,
+ * con:
+ *   • campo manual de N° consecutivo en header y cuerpo
+ *   • tabla completa de técnicos
+ *   • sección DESCRIPCIÓN deduplicada (misma fecha + mismo texto)
+ *   • fecha prefijada en cada bloque
+ *   • saltos de línea para texto ilimitado
+ *   • validación de filtros, escape de regex y saneado de nombres
+ *   • NUEVO: filtros encadenados (cliente → semanas/operarios y cruce entre semanas/operarios)
+ */
+
+const TEMPLATE_ID      = '14PCr1pgbY0HeHrGUv-w5fK_NmdDfntRVzJbLixtY5PE';
+const SHEET_ID         = SpreadsheetApp.getActive().getId();
+const TARGET_FOLDER_ID = '1BBmVffFm8KQkmgRyqaR04UnqQYOA-bGJ';
+
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('Informes PDF')
+    .addItem('Generar informe', 'showFilterSidebar')
+    .addToUi();
+}
+
+function showFilterSidebar() {
+  const tpl  = HtmlService.createTemplateFromFile('Sidebar');
+  const opts = getFilterOptions();
+  tpl.clientes     = opts.clientes;
+  tpl.operarios    = opts.operarios;
+  tpl.semanas      = opts.semanas;
+  tpl.consecutivos = opts.consecutivos;
+  const html = tpl.evaluate().setTitle('Filtros Informe');
+  if (HtmlService.XFrameOptionsMode && HtmlService.XFrameOptionsMode.DENY != null) {
+    html.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.DENY);
+  }
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+/** Opciones completas (para estado inicial y validaciones) */
+function getFilterOptions() {
+  const sheet   = SpreadsheetApp.openById(SHEET_ID).getSheetByName('REGISTROS');
+  const vals    = sheet.getDataRange().getValues();
+  const headers = vals.shift().map(h => h.toString().toUpperCase());
+  const iC = headers.indexOf('CLIENTE'),
+        iO = headers.indexOf('OPERARIO'),
+        iS = headers.indexOf('SEMANA');
+  const sC = new Set(), sO = new Set(), sS = new Set();
+  vals.forEach(r => {
+    if (iC>=0 && r[iC]) sC.add(r[iC]);
+    if (iO>=0 && r[iO]) sO.add(r[iO]);
+    if (iS>=0 && r[iS]) sS.add(r[iS]);
+  });
+  // Leer lista de consecutivos disponibles: A con B vacía
+  const cSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('CONSECUTIVOS');
+  let consecList = [];
+  if (cSheet) {
+    const rows = cSheet.getRange(1,1,cSheet.getLastRow(),2).getValues();
+    consecList = rows
+      .filter(r => r[0] && !r[1])
+      .map(r => String(r[0]));
+  }
+  return {
+    clientes:     Array.from(sC).sort(),
+    operarios:    Array.from(sO).sort(),
+    semanas:      Array.from(sS).map(Number).sort((a,b)=>a-b).map(String),
+    consecutivos: consecList
+  };
+}
+
+/**
+ * NUEVO: Devuelve las semanas y operarios disponibles tras aplicar
+ * los filtros actuales (cliente, semanas seleccionadas y operarios seleccionados).
+ * Sirve tanto para cambiar de cliente como para marcar semanas/operarios.
+ */
+function getDependentOptions(filters) {
+  const cliente   = filters?.cliente || '';
+  const selSem    = (filters?.semanas || []).map(String);
+  const selOps    = (filters?.operarios || []).map(String);
+
+  const sheet   = SpreadsheetApp.openById(SHEET_ID).getSheetByName('REGISTROS');
+  const vals    = sheet.getDataRange().getValues();
+  const headers = vals.shift().map(h => h.toString().toUpperCase());
+  const iC = headers.indexOf('CLIENTE'),
+        iO = headers.indexOf('OPERARIO'),
+        iS = headers.indexOf('SEMANA');
+
+  const setS = new Set();
+  const setO = new Set();
+
+  vals.forEach(r => {
+    let ok = true;
+    if (cliente)          ok = ok && String(r[iC]) === cliente;
+    if (selSem.length)    ok = ok && selSem.includes(String(r[iS]));
+    if (selOps.length)    ok = ok && selOps.includes(String(r[iO]));
+    if (!ok) return;
+
+    if (iS>=0 && r[iS]) setS.add(String(r[iS]));
+    if (iO>=0 && r[iO]) setO.add(String(r[iO]));
+  });
+
+  const semanas   = Array.from(setS).map(Number).sort((a,b)=>a-b).map(String);
+  const operarios = Array.from(setO).sort();
+  return { semanas, operarios };
+}
+
+function assertValidFilters(filters) {
+  const opts = getFilterOptions();
+  if (filters.cliente && !opts.clientes.includes(filters.cliente))
+    throw new Error('Cliente no válido');
+  filters.semanas?.forEach(s => {
+    if (!opts.semanas.includes(s)) throw new Error('Semana no válida: ' + s);
+  });
+  filters.operarios?.forEach(o => {
+    if (!opts.operarios.includes(o)) throw new Error('Operario no válido: ' + o);
+  });
+  if (!filters.consecutivo || !opts.consecutivos.includes(filters.consecutivo))
+    throw new Error('Consecutivo no válido');
+}
+
+function escapeForRegex(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function sanitizeFilename(name) {
+  return name.replace(/[^a-zA-Z0-9 _-]/g, '').trim();
+}
+
+function getFilteredData(filters) {
+  const sheet   = SpreadsheetApp.openById(SHEET_ID).getSheetByName('REGISTROS');
+  const rows    = sheet.getDataRange().getValues();
+  const rawH    = rows.shift();
+  const headers = rawH.map(h => h.toString().toUpperCase());
+  const iC = headers.indexOf('CLIENTE'),
+        iO = headers.indexOf('OPERARIO'),
+        iS = headers.indexOf('SEMANA');
+  return rows
+    .filter(r => {
+      let ok = true;
+      if (filters.cliente)           ok = ok && String(r[iC]) === filters.cliente;
+      if (filters.semanas?.length)   ok = ok && filters.semanas.includes(String(r[iS]));
+      if (filters.operarios?.length) ok = ok && filters.operarios.includes(String(r[iO]));
+      return ok;
+    })
+    .map(r => {
+      const obj = {};
+      rawH.forEach((h,i) => obj[h.toString().replace(/\s+/g,'_')] = r[i]);
+      obj.FECHA        = parseDate(obj.FECHA);
+      obj.HORA_ENTRADA = parseTime(obj.HORA_ENTRADA);
+      obj.HORA_SALIDA  = parseTime(obj.HORA_SALIDA);
+      obj['Nº_HORAS']  = calcHoursDiff(obj.HORA_ENTRADA, obj.HORA_SALIDA);
+      return obj;
+    });
+}
+
+function parseDate(v) {
+  if (v instanceof Date) return v;
+  const d = new Date(v);
+  return isNaN(d) ? null : d;
+}
+
+function parseTime(v) {
+  if (v instanceof Date) {
+    return Utilities.formatDate(v, Session.getScriptTimeZone(), 'HH:mm');
+  }
+  if (typeof v === 'string' && /^\d{1,2}:\d{2}/.test(v)) return v;
+  return null;
+}
+
+function calcHoursDiff(h1, h2) {
+  if (!h1 || !h2) return '';
+  const [H1,M1] = h1.split(':').map(Number);
+  const [H2,M2] = h2.split(':').map(Number);
+  let diff = (H2*60+M2) - (H1*60+M1);
+  if (diff < 0) diff += 1440;
+  return (diff/60).toFixed(2);
+}
+
+function generateReport(filters) {
+  assertValidFilters(filters);
+  const consecutivo = filters.consecutivo;
+  const ui = SpreadsheetApp.getUi();
+  ui.alert('🚀 Generando informe único...');
+
+  const items = getFilteredData(filters);
+  if (!items.length) {
+    ui.alert('No se encontraron registros...');
+    return;
+  }
+  items.sort((a,b) => a.FECHA - b.FECHA);
+
+  // –– Calculamos el nombre base
+  const general = items[0];
+  const MONTH_ABB = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const month = general.FECHA instanceof Date ? MONTH_ABB[general.FECHA.getMonth()] : '';
+  const baseName = (filters.semanas.length===1)
+                 ? `${general.CLIENTE}_Semana${filters.semanas[0]}`
+                 : `${general.CLIENTE}_${general.OPERARIO}_${month}`;
+  const docName = sanitizeFilename(baseName) + '_' + consecutivo;  // sin ".pdf"
+
+  // –– Creamos la copia del template en la carpeta destino
+  const targetFolder = DriveApp.getFolderById(TARGET_FOLDER_ID);
+  const copy = DriveApp.getFileById(TEMPLATE_ID).makeCopy(docName, targetFolder);
+
+  // –– Abrimos y rellenamos el Google Doc
+  const doc  = DocumentApp.openById(copy.getId());
+  const body = doc.getBody();
+
+  ['Header','Footer'].forEach(slot => {
+    const sec = doc['get' + slot]();
+    if (sec) sec.replaceText(escapeForRegex('{{CONSECUTIVO}}'), consecutivo);
+  });
+  body.replaceText(escapeForRegex('{{CONSECUTIVO}}'), consecutivo);
+
+  // Rellenar tags + sección DESCRIPCIÓN
+  Object.keys(general).forEach(key => {
+    const tag = `{{${key.toUpperCase()}}}`;
+    if (key.toUpperCase() === 'DESCRIPCION') {
+      const bloques = []; const seen = new Set();
+      items.forEach(it => {
+        const dateKey = it.FECHA instanceof Date ? it.FECHA.getTime() : '';
+        const raw = it.DESCRIPCION || '';
+        const norm = raw.split(/\r?\n/).map(l=>l.trim()).join('\n');
+        const keyNorm = dateKey + '|' + norm;
+        if (!seen.has(keyNorm)) {
+          seen.add(keyNorm);
+          const fechaStr = it.FECHA ? Utilities.formatDate(it.FECHA, Session.getScriptTimeZone(), 'dd/MM/yyyy') : '';
+          const lines = raw.split(/\r?\n/).map(l => l.trim());
+          const first = lines.shift() || '';
+          bloques.push([`${fechaStr}: ${first}`, ...lines].join('\n'));
+        }
+      });
+      body.replaceText(escapeForRegex(tag), bloques.join('\n\n'));
+    } else {
+      let val = general[key] || '';
+      if (key.toUpperCase().includes('FECHA') && val instanceof Date) {
+        val = Utilities.formatDate(val, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+      }
+      body.replaceText(escapeForRegex(tag), String(val));
+    }
+  });
+
+  // Tabla de técnicos
+  const table = body.getTables().find(t => t.getRow(1).getText().includes('{{OPERARIO_1}}'));
+  if (table) {
+    items.forEach((it, i) => {
+      const row = i+1;
+      const f   = it.FECHA ? Utilities.formatDate(it.FECHA, Session.getScriptTimeZone(), 'dd/MM/yyyy') : '';
+      table.getCell(row,0).setText(f);
+      table.getCell(row,1).setText(it.OPERARIO || '');
+      table.getCell(row,2).setText(it.HORA_ENTRADA || '');
+      table.getCell(row,3).setText(it.HORA_SALIDA || '');
+      table.getCell(row,4).setText(it['Nº_HORAS'] || '');
+      table.getCell(row,5).setText(it.TIPO_DE_HORA || '');
+      table.getCell(row,6).setText(it.PRECIO_UNITARIO || '');
+      table.getCell(row,7).setText(it.IMPORTE || '');
+    });
+    while (table.getNumRows() > items.length+1) {
+      table.removeRow(table.getNumRows()-1);
+    }
+  }
+
+  doc.saveAndClose();
+
+  // –– Exportamos a PDF en la misma carpeta
+  targetFolder.createFile(
+    copy.getAs('application/pdf').setName(docName + '.pdf')
+  );
+
+  // –– Marcamos el consecutivo ya usado
+  updateConsecutivoSheet(consecutivo, general.CLIENTE);
+
+  ui.alert(`✔ Informe "${docName}.pdf" generado y guardado en Drive.`);
+}
+
+function updateConsecutivoSheet(consec, cliente) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sh = ss.getSheetByName('CONSECUTIVOS'); if (!sh) return;
+  const vals = sh.getRange(1,1,sh.getLastRow(),1).getValues().flat().map(String);
+  const idx = vals.indexOf(consec); if (idx>=0) sh.getRange(idx+1,2).setValue(cliente);
+}
+
+function onFormSubmit(e) {
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('REGISTROS');
+  const hdrs  = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0]
+                    .map(h=>h.toString().toUpperCase());
+  const col = hdrs.indexOf('FECHA ENVIO'); if (col<0) return;
+  sheet.getRange(sheet.getLastRow(), col+1).setValue(new Date());
+}
+
+function include(name) {
+  return HtmlService.createHtmlOutputFromFile(name).getContent();
+}
